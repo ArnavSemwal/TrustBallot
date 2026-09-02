@@ -1,0 +1,10 @@
+{
+  "description": "Empowering migrant voters with a secure, intuitive kiosk UI for remote voting, ensuring a fast and accessible experience in their preferred language.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
