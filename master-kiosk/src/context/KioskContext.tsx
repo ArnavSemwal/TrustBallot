@@ -27,6 +27,7 @@ interface KioskContextProps {
   resetActivity: () => void;
   secondsLeft: number;
   submitVote: () => Promise<void>;
+  votePool: any[];
 }
 
 const KioskContext = createContext<KioskContextProps | undefined>(undefined);
@@ -38,6 +39,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const [voterId, setVoterId] = useState('');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(SESSION_TIMEOUT_SECONDS);
+  const [votePool, setVotePool] = useState<any[]>([]);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,22 +104,46 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [location.pathname]);
 
+  const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const flushPool = useCallback(() => {
+    setVotePool((currentPool) => {
+      if (currentPool.length > 0) {
+        const shuffledPool = [...currentPool].sort(() => Math.random() - 0.5);
+        console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', shuffledPool);
+      }
+      return [];
+    });
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (votePool.length >= 15) {
+      flushPool();
+    } else if (votePool.length > 0 && !flushTimerRef.current) {
+      flushTimerRef.current = setTimeout(() => {
+        flushPool();
+      }, 60000);
+    } else if (votePool.length === 0 && flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+  }, [votePool, flushPool]);
+
   const submitVote = async () => {
     return new Promise<void>((resolve, reject) => {
-      const realPayload = { voterId, candidateId: selectedCandidate?.id, timestamp: Date.now() };
-      const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000 };
-      const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000 };
-      
-      const batchedPayload = [realPayload, decoy1, decoy2].sort(() => Math.random() - 0.5);
-      
-      console.log('--- OBFUSCATED BATCH SUBMISSION ---');
-      console.log(batchedPayload);
-      console.log('-----------------------------------');
-      
       setTimeout(() => {
         if (Math.random() < 0.2) {
           reject(new Error('NULLIFIER_COLLISION'));
         } else {
+          const realPayload = { voterId, candidateId: selectedCandidate?.id, timestamp: Date.now() };
+          const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000 };
+          const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000 };
+          
+          setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
           resolve();
         }
       }, 800);
@@ -129,7 +155,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       selectedLanguage, setSelectedLanguage,
       voterId, setVoterVerified, // Exporting the correctly named function
       selectedCandidate, setSelectedCandidate,
-      resetSession, resetActivity, secondsLeft, submitVote
+      resetSession, resetActivity, secondsLeft, submitVote, votePool
     }}>
       {children}
     </KioskContext.Provider>
