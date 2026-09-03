@@ -64,7 +64,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleActivity = () => {
-      if (location.pathname !== '/' && location.pathname !== '/success') {
+      if (location.pathname !== '/' && location.pathname !== '/success' && location.pathname !== '/audit') {
         setSecondsLeft(SESSION_TIMEOUT_SECONDS);
       }
     };
@@ -83,7 +83,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === '/' || location.pathname === '/success') {
+    if (location.pathname === '/' || location.pathname === '/success' || location.pathname === '/audit') {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }

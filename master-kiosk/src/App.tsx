@@ -4,6 +4,7 @@ import AuthPage from './pages/AuthPage';
 import BallotPage from './pages/BallotPage';
 import ReviewPage from './pages/ReviewPage';
 import SuccessPage from './pages/SuccessPage';
+import AdminDashboard from './pages/AdminDashboard';
 import { useKiosk } from './context/KioskContext';
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/ballot" element={<BallotPage />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/audit" element={<AdminDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
