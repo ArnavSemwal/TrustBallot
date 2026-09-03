@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --color-background: #F9F9FB;
+  --color-primary: #0D233A;
+  --color-cta: #028090;
+  --color-accent: #F4A261;
+  --color-foreground: #2B2D42;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-devanagari: 'Noto Sans Devanagari', 'Noto Sans', sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+@keyframes scan {
+  0%   { top: 12%; }
+  50%  { top: 82%; }
+  100% { top: 12%; }
+}
+
+.scanner-laser {
+  animation: scan 2.2s ease-in-out infinite;
+}
+
+/* ── Kiosk Scrollbar Hider ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
