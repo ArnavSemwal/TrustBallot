@@ -1,0 +1,10 @@
+node_modules/
+*.wtns
+circuits/main_js/
+circuits/input.json
+circuits/proof.json
+circuits/public.json
+pot12_0000.ptau
+pot12_0001.ptau
+pot14_0000.ptau
+pot14_0001.ptau

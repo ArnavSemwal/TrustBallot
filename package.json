@@ -1,0 +1,28 @@
+{
+  "name": "trustballot",
+  "version": "1.0.0",
+  "description": "[![React](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)\r [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)\r [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)\r [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)\r [![PRD](https://img.shields.io/badge/PRD-v1.2_Compliant-success?style=flat-square)](#-prd-compliance-matrix-arnavs-scope)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArnavSemwal/TrustBallot.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ArnavSemwal/TrustBallot/issues"
+  },
+  "homepage": "https://github.com/ArnavSemwal/TrustBallot#readme",
+  "devDependencies": {
+    "circomlib": "^2.0.5",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.17.0",
+    "snarkjs": "^0.7.6"
+  },
+  "dependencies": {
+    "circomlibjs": "^0.1.7"
+  }
+}
