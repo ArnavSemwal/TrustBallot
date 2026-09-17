@@ -30,13 +30,28 @@ contract KioskRegistry {
      * @param eciSignature The signature from the ECI authorizing this kiosk.
      */
     function registerKiosk(string memory kioskId, string memory pubKey, bytes memory eciSignature) external onlyAdmin {
-        // NOTE: In MVP, we skip the on-chain signature verification of eciSignature for simplicity, 
-        // as the onlyAdmin modifier already restricts access to the ECI admin.
-        // A full implementation would use ECDSA.recover(pubKey, eciSignature) to ensure non-repudiation.
+        bytes32 messageHash = keccak256(abi.encodePacked(kioskId, pubKey));
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        
+        require(recoverSigner(ethSignedMessageHash, eciSignature) == eciAdmin, "Invalid ECI signature");
         
         kioskPubKeys[kioskId] = pubKey;
         isKioskRegistered[kioskId] = true;
 
         emit KioskRegistered(kioskId, pubKey);
+    }
+
+    function splitSignature(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        require(sig.length == 65, "invalid signature length");
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+
+    function recoverSigner(bytes32 message, bytes memory sig) internal pure returns (address) {
+        (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
+        return ecrecover(message, v, r, s);
     }
 }

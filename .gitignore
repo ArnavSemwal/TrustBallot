@@ -8,3 +8,7 @@ pot12_0000.ptau
 pot12_0001.ptau
 pot14_0000.ptau
 pot14_0001.ptau
+circuits/main.r1cs
+circuits/main.sym
+artifacts/
+cache/

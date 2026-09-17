@@ -1,0 +1,28 @@
+config:
+  target: "http://127.0.0.1:8545"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Sustained load (5 votes/sec)"
+    - duration: 30
+      arrivalRate: 20
+      name: "Spike load (20 votes/sec)"
+  processor: "./mock-voter.js"
+
+scenarios:
+  - name: "Submit Vote via Kiosk"
+    engine: "http"
+    flow:
+      - function: "generateMockZKP"
+      - post:
+          url: "/"
+          json:
+            jsonrpc: "2.0"
+            method: "eth_sendTransaction"
+            params:
+              - "{{ txParams }}"
+            id: 1
+          capture:
+            - json: "$.result"
+              as: "txHash"
+      - log: "Sent Vote Transaction: {{ txHash }}"

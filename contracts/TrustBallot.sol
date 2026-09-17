@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "./KioskRegistry.sol";
+import "./PlonkVerifier.sol";
 
 /**
  * @title TrustBallot
@@ -9,6 +10,7 @@ import "./KioskRegistry.sol";
  */
 contract TrustBallot {
     KioskRegistry public kioskRegistry;
+    PlonkVerifier public plonkVerifier;
     
     // Mapping to track spent nullifiers per election
     mapping(uint256 => mapping(uint256 => bool)) public spentNullifiers;
@@ -16,8 +18,9 @@ contract TrustBallot {
     event VoteAccepted(uint256 indexed electionId, uint256 nullifier);
     event VoteRejected(uint256 indexed electionId, string reason);
 
-    constructor(address _kioskRegistryAddress) {
+    constructor(address _kioskRegistryAddress, address _plonkVerifierAddress) {
         kioskRegistry = KioskRegistry(_kioskRegistryAddress);
+        plonkVerifier = PlonkVerifier(_plonkVerifierAddress);
     }
 
     /**
@@ -34,7 +37,7 @@ contract TrustBallot {
         uint256 electionId,
         uint256 nullifier,
         bytes memory ciphertextVote,
-        bytes memory zkpProof,
+        uint256[24] calldata zkpProof,
         bytes memory dilithiumSignature
     ) external {
         // 1. Verify Kiosk Registration
@@ -51,8 +54,12 @@ contract TrustBallot {
         }
 
         // 3. Verify ZKP (PLONK)
-        // NOTE: Stubbed for MVP. Would call the SnarkJS generated Verifier contract.
-        if (!verifyZKP(zkpProof)) {
+        uint256[3] memory pubSignals;
+        pubSignals[0] = nullifier;
+        pubSignals[1] = 0; // root (in a full implementation, retrieve from state)
+        pubSignals[2] = electionId;
+        
+        if (!plonkVerifier.verifyProof(zkpProof, pubSignals)) {
             emit VoteRejected(electionId, "invalid_zkp");
             return;
         }
@@ -72,10 +79,6 @@ contract TrustBallot {
 
     // --- Stubbed verification functions for MVP ---
     function verifyDilithium(bytes memory /* signature */, string memory /* kioskId */) internal pure returns (bool) {
-        return true;
-    }
-
-    function verifyZKP(bytes memory /* proof */) internal pure returns (bool) {
         return true;
     }
 }

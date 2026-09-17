@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  node1:
+    build: ./tally
+    ports:
+      - "8001:8000"
+    container_name: trustballot-node1
+  node2:
+    build: ./tally
+    ports:
+      - "8002:8000"
+    container_name: trustballot-node2
+  node3:
+    build: ./tally
+    ports:
+      - "8003:8000"
+    container_name: trustballot-node3
+  node4:
+    build: ./tally
+    ports:
+      - "8004:8000"
+    container_name: trustballot-node4
