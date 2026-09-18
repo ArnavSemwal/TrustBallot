@@ -44,15 +44,22 @@ class TallyServer(BaseHTTPRequestHandler):
         req = json.loads(post_data.decode('utf-8'))
 
         if self.path == '/add_vote':
-            vote = req.get("vote")
-            encrypted_vote = encrypt_vote(pub_key, vote)
+            vote_index = req.get("vote", 0)
+            
+            # Convert candidate index to a one-hot encoded array for 12 candidates
+            num_candidates = 12
+            vote_array = [0] * num_candidates
+            if isinstance(vote_index, int) and 1 <= vote_index <= num_candidates:
+                vote_array[vote_index - 1] = 1
+                
+            encrypted_vote = encrypt_vote(pub_key, vote_array)
             if running_tally is None:
                 running_tally = encrypted_vote
             else:
                 running_tally = add_votes(running_tally, encrypted_vote)
                 
             # Generate transaction hash
-            tx_data = f"{vote}-{time.time()}".encode('utf-8')
+            tx_data = f"{vote_index}-{time.time()}".encode('utf-8')
             tx_hash = '0x' + hashlib.sha256(tx_data).hexdigest()[:40]
             timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
             log_str = f"[{timestamp}] TX_HASH: {tx_hash} STATUS: CRYPTOGRAPHICALLY_SEALED"
