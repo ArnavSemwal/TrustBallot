@@ -111,28 +111,45 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
 
   const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const flushPool = useCallback(() => {
-    setVotePool((currentPool) => {
-      if (currentPool.length > 0) {
-        const shuffledPool = [...currentPool].sort(() => Math.random() - 0.5);
-        console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', shuffledPool);
+  const flushPool = useCallback(async () => {
+    // If we have nothing to flush, abort
+    if (votePool.length === 0) return;
+    
+    // Make a copy of the pool and clear the state
+    const poolToFlush = [...votePool].sort(() => Math.random() - 0.5);
+    setVotePool([]);
+    
+    console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', poolToFlush);
+    for (const payload of poolToFlush) {
+      const candidateStr = payload.candidateId || 'c0';
+      const voteInt = parseInt(candidateStr.replace(/[^0-9]/g, '')) || 0;
+      
+      try {
+        await fetch('http://localhost:8001/add_vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: voteInt })
+        });
+      } catch (e) {
+        console.error("Failed to send payload to blockchain:", e);
       }
-      return [];
-    });
+    }
+
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;
     }
-  }, []);
+  }, [votePool]);
 
   // PRD v1.2: 50-100 votes batch capacity, 2-hour timeout flush (7200000 ms)
+  // TEMPORARILY REDUCED TO 3 FOR DEMO PURPOSES (1 vote = 3 payloads)
   useEffect(() => {
-    if (votePool.length >= 50) {
+    if (votePool.length >= 3) {
       flushPool();
     } else if (votePool.length > 0 && !flushTimerRef.current) {
       flushTimerRef.current = setTimeout(() => {
         flushPool();
-      }, 7200000);
+      }, 5000); // 5 seconds instead of 2 hours for demo
     } else if (votePool.length === 0 && flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
       flushTimerRef.current = null;

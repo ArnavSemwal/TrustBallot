@@ -7,25 +7,29 @@ export default function AdminDashboard() {
   const [disputeInput, setDisputeInput] = useState('');
   const [disputeSuccess, setDisputeSuccess] = useState(false);
 
-  // Generate random mock transaction hashes
-  const generateHash = () => {
-    return '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-  };
-
-  // Simulate incoming ciphertext stream
+  // Fetch real incoming ciphertext stream
   useEffect(() => {
+    const startupLog = `[${new Date().toISOString()}] SYSTEM_STARTUP: Telemetry stream initialized.`;
+    const syncLog = `[${new Date().toISOString()}] NODE_SYNC: Consortium connection established.`;
+    
     // Initial data
-    setStream([
-      `[${new Date().toISOString()}] SYSTEM_STARTUP: Telemetry stream initialized.`,
-      `[${new Date().toISOString()}] NODE_SYNC: Consortium connection established.`
-    ]);
+    setStream([startupLog, syncLog]);
 
-    const interval = setInterval(() => {
-      setStream((prev) => {
-        const newLogs = [...prev, `[${new Date().toISOString()}] TX_HASH: ${generateHash()} STATUS: CRYPTOGRAPHICALLY_SEALED`];
-        return newLogs.slice(-50); // Keep last 50 logs to avoid memory issues
-      });
-    }, Math.floor(Math.random() * 2000) + 2000); // 2-4 seconds
+    const fetchTransactions = async () => {
+      try {
+        const response = await fetch('http://localhost:8001/transactions');
+        const data = await response.json();
+        if (data && data.transactions) {
+          setStream([startupLog, syncLog, ...data.transactions]);
+        }
+      } catch (e) {
+        console.error("Failed to fetch transactions from node", e);
+      }
+    };
+    
+    // Poll every 2 seconds
+    const interval = setInterval(fetchTransactions, 2000);
+    fetchTransactions();
 
     return () => clearInterval(interval);
   }, []);
