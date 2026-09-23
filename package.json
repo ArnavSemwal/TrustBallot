@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArnavSemwal/TrustBallot.git"
+    "url": "git+https://github.com/TrustBallot-Team/TrustBallot.git"
   },
   "keywords": [],
   "type": "module",
   "bugs": {
-    "url": "https://github.com/ArnavSemwal/TrustBallot/issues"
+    "url": "https://github.com/TrustBallot-Team/TrustBallot/issues"
   },
-  "homepage": "https://github.com/ArnavSemwal/TrustBallot#readme",
+  "homepage": "https://github.com/TrustBallot-Team/TrustBallot#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.1.0",
     "@nomicfoundation/hardhat-toolbox": "^7.0.0",

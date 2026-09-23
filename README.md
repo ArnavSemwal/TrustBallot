@@ -2,13 +2,14 @@
 
 [![React](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![PRD](https://img.shields.io/badge/PRD-v1.2_Compliant-success?style=flat-square)](#-prd-compliance-matrix-arnavs-scope)
+[![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.20-363636?style=flat-square&logo=solidity&logoColor=white)](https://soliditylang.org/)
+[![Circom](https://img.shields.io/badge/Circom-2.1.6-FFA500?style=flat-square)](https://docs.circom.io/)
+[![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
-> **Repository**: [https://github.com/ArnavSemwal/TrustBallot](https://github.com/ArnavSemwal/TrustBallot)  
-> **Academic / Prototype Cycle**: 3-Month Delivery MVP  
+> **Repository**: [https://github.com/TrustBallot-Team/TrustBallot](https://github.com/TrustBallot-Team/TrustBallot)  
+> **Academic / Prototype Cycle**: MVP  
 > **Target Problem**: Enabling secure remote voting for India's ~300M domestic migrant voters.
+> **Team**: Anushka (Blockchain/Crypto), Shashwat (Backend/Infra), Arnav (Frontend/UX)
 
 ---
 
@@ -17,7 +18,7 @@
 India has an estimated **300 million internal migrant citizens** who are routinely disenfranchised during general and state elections due to the prohibitive cost, transit time, and logistical burden of returning to their home constituencies. The Election Commission of India's (ECI) 2022 Remote Voting Machine (RVM) prototype was non-networked, physically isolated, and failed to adequately resolve remote double-voting, coercion resilience, or verifiable tallying.
 
 **TrustBallot** solves this by introducing a networked, cryptographically-verifiable kiosk voting system built on:
-1. **Zero-Knowledge Proofs (ZKP)** for identity and eligibility verification without disclosing voter identity.
+1. **Zero-Knowledge Proofs (ZKP)** (PLONK) for identity and eligibility verification without disclosing voter identity.
 2. **Threshold Paillier Homomorphic Encryption (HE)** for encrypted on-chain tallying ($t = 3\text{-of-}4$ consortium threshold).
 3. **A 4-Node BFT Consortium Blockchain** (ECI Primary, Supreme Court, State EC, Independent Auditor) preventing single-point failure or partisan tampering.
 4. **A Coercion-Resistant Physical Kiosk & Middleware Layer** featuring Duress PIN protection, metadata obfuscation shuffling, and touch-optimized symbol navigation.
@@ -28,110 +29,35 @@ India has an estimated **300 million internal migrant citizens** who are routine
 
 ```mermaid
 flowchart TD
-    subgraph KIOSK_CLIENT["Kiosk Frontend & UX (Lead: Arnav)"]
-        LP[Language Selection<br/>English / Hindi] --> AP1[Auth Step 1: EPIC QR / Manual Entry]
-        AP1 --> AP2[Auth Step 2: Biometric Webcam Stub<br/>Force Pass / Fail Demo Controls]
-        AP2 --> AP3[Auth Step 3: 4-Digit PIN Pad<br/>Standard PIN vs. Duress PIN 9999]
-        AP3 --> BP[Digital Ballot Page<br/>4-Candidate Pagination + NOTA]
-        BP --> RP[Digital VVPAT Review<br/>20% Rejection / Retry Simulation]
-        RP --> SP[Success Page<br/>Auto Session Reset & Memory Wipe]
+    subgraph KIOSK_CLIENT["Kiosk Frontend & UX"]
+        LP[Language Selection] --> AP1[Auth Step 1: EPIC QR / Manual Entry]
+        AP1 --> AP2[Auth Step 2: Biometric Verification]
+        AP2 --> AP3[Auth Step 3: Secure PIN Pad]
+        AP3 --> BP[Digital Ballot Page]
+        BP --> RP[Digital VVPAT Review]
+        RP --> SP[Success Page]
     end
 
-    subgraph MIDDLEWARE["Metadata Obfuscation Buffer (Lead: Arnav)"]
+    subgraph MIDDLEWARE["Metadata Obfuscation Buffer"]
         RP -. "submitVote()" .-> OB[Batching Shuffler Pool]
         OB -- "Standard Vote" --> REAL[Real Payload + 2 Decoys]
-        OB -- "Duress Mode (9999)" --> SPOIL[3 Spoiled Decoy Payloads<br/>Silent Coercion Defense]
-        REAL --> SHUFFLE[Fisher-Yates Batch Shuffle<br/>Threshold: 50 Votes / 2-Hr Timeout]
+        OB -- "Duress Mode (9999)" --> SPOIL[3 Spoiled Decoy Payloads]
+        REAL --> SHUFFLE[Fisher-Yates Batch Shuffle]
         SPOIL --> SHUFFLE
     end
 
-    subgraph BACKEND_BLOCKCHAIN["Consortium Blockchain & Crypto (Anushka + Shashwat)"]
-        SHUFFLE --> BFT[4-Node BFT Consortium<br/>ECI, Supreme Court, State EC, Auditor]
+    subgraph BACKEND_BLOCKCHAIN["Consortium Blockchain & Crypto"]
+        SHUFFLE --> BFT[4-Node BFT Consortium Network]
         BFT --> ZK[PLONK ZKP Nullifier Verification]
-        ZK --> HE[Paillier Homomorphic Tally<br/>3-of-4 Threshold Decryption]
+        ZK --> HE[Paillier Homomorphic Tally Server]
     end
 
-    subgraph ADMIN_CONSOLE["ECI Telemetry & Audit (Arnav + Shashwat)"]
-        BFT -. Status Feeds .-> AD[Admin Dashboard /audit<br/>Consortium Health & Node Quorum]
+    subgraph ADMIN_CONSOLE["ECI Telemetry & Audit"]
+        BFT -. Status Feeds .-> AD[Admin Dashboard /audit]
         SHUFFLE -. Cipher Stream .-> AD
-        AD -. Manual Flagging .-> PO[Procedural Override<br/>Zero Biometrics Retained]
+        AD -. Manual Flagging .-> PO[Procedural Override]
     end
 ```
-
----
-
-## 👨‍💻 Engineering Ownership & Deliverables: Arnav
-
-Per the **PRD v1.2** specification, all Kiosk User Experience, Voter Authentication UI, Coercion Resistance (Duress PIN), Metadata Obfuscation Middleware, and the ECI Telemetry Dashboard are owned and implemented by **Arnav (Frontend/UX & Middleware Lead)**.
-
-### 1. 🪪 Kiosk Authentication & Biometrics (`src/pages/AuthPage.tsx`)
-- **Step 1 — EPIC/QR Scan & Keypad**: Touch-friendly virtual numeric keypad for manual EPIC entry alongside QR scanner laser sweep animation.
-- **Step 2 — Biometric Face-Match Stub**: 
-  - Integrated `react-webcam` with continuous laser-sweep alignment grid.
-  - **PRD v1.2 P0 Compliance**: Replaced automatic timeout with **explicit Demo Controls** ("Demo: Force Pass" / "Demo: Force Fail").
-  - Integrated failure handling overlay allowing demonstrators to showcase biometric rejection and retry workflows.
-- **Step 3 — Secure Voting PIN Entry**: 4-digit PIN pad that seamlessly authenticates the voter and arms duress protection before loading the ballot.
-
-### 2. 🛡 Coercion Protection: Duress PIN Engine (`src/context/KioskContext.tsx` & `AuthPage.tsx`)
-- **Threat Model Addressed (PRD §8.9)**: Protects vulnerable migrant workers coerced by bad actors outside or near the polling kiosk.
-- **Trigger**: Entering the pre-configured emergency code **`9999`** triggers `duressMode: true` silently in memory.
-- **Silent Spoofing Execution**: 
-  - The voter experiences the exact same UI, ballot confirmation, and success feedback.
-  - In `KioskContext.tsx`, `submitVote()` intercepts the real vote payload, drops the voter's actual candidate selection, and dispatches a **silent spoiled decoy payload** into the metadata pool.
-  - Prevents the coercer from verifying compliance while rendering the coerced vote null and void on-chain.
-- **Helper Guidance**: Includes subtle localized helper text ("Demo Tip: Enter 9999 to trigger Duress PIN silent spoof").
-
-### 3. 🗳 Digital Ballot & Touch Pagination (`src/pages/BallotPage.tsx`)
-- **Optimized for Low-Literacy Migrants**: Large, high-contrast party symbols, color-coded borders, and localized party and candidate names.
-- **Strict Single-Viewport Zero-Scroll Constraints**: Physical kiosks cannot rely on vertical native scrolling without breaking touch ergonomy. Implemented clean **4-candidates-per-page touch slicing** with touch-friendly Previous/Next buttons.
-- **Deterministic NOTA Placement**: Ensured None of the Above (NOTA) is strictly preserved on the final page as mandated by ECI electoral protocol.
-
-### 4. 🔄 Voter-Facing Error & Retry State (`src/pages/ReviewPage.tsx`)
-- **Smart Contract Rejection Simulation**: Built-in 20% simulated network rejection / nullifier collision (`NULLIFIER_COLLISION`) on vote submission.
-- **Recovery Modal**: Voter is presented with a non-technical, accessible error dialog allowing instantaneous cryptographic re-submission without losing ballot context or resetting session data.
-
-### 5. 🌐 Global Bilingual Localization Engine (`src/context/KioskContext.tsx`)
-- Instantaneous switching between **English** and **Hindi**.
-- Deep localization across:
-  - Header step indicators and timer notifications.
-  - Candidate names and party manifestos (`name: { en: "...", hi: "..." }`).
-  - Digital VVPAT slip details and audit disclaimers.
-  - Demo toggles, failure modals, and timeout warning banners.
-
-### 6. 🔀 Stateful Metadata Obfuscation Middleware (`src/context/KioskContext.tsx`)
-- **Metadata Leakage Prevention (PRD v1.2 P1)**: To prevent timing analysis attacks linking network packets to physical voters at a kiosk, `submitVote` routes votes through a batch buffer:
-  - Generates 1 real payload + 2 synthetic decoy payloads per submission.
-  - **Batch Capacity**: Holds up to **50–100 votes** (configured to 50 threshold).
-  - **Timeout Flush**: Flushes every **2 hours** (`7,200,000 ms`).
-  - **Fisher-Yates Shuffle**: Completely randomizes transaction order prior to consortium dispatch.
-
-### 7. ⏱ Kiosk Session Security & Inactivity Protection (`src/App.tsx`, `KioskContext.tsx`)
-- **Zero-Trust Physical Security**: Enforces a strict 60-second session inactivity timer.
-- **Event-Capturing Reset**: Attached window listeners in the **capturing phase** (`{ capture: true }`) so nested buttons with `e.stopPropagation()` cannot bypass inactivity tracking.
-- **Emergency Wipe**: If the timer reaches 0, all biometric data, EPIC tokens, and pending ballots in memory are purged, returning the kiosk to `/`.
-- **Warning Toast**: Floating non-intrusive alert mounts when $\le 15\text{s}$ remain.
-
-### 8. 📊 Admin & Auditor Telemetry Control Room (`src/pages/AdminDashboard.tsx`)
-- **Route**: `/audit` (completely exempt from kiosk session timeouts).
-- **Aesthetic**: Hyper-minimalist, high-density **Vercel/Linear-inspired dark monochrome** interface (`#000000` true dark, `#111111` cards, `#ededed` text).
-- **Live BFT Node Consortium**: Real-time health status of 4 distributed consortium nodes (ECI Primary, Supreme Court, State EC Node, Independent Auditor) verifying 3-of-4 quorum.
-- **Encrypted Ciphertext Stream**: Fixed-height auto-scrolling terminal (`h-[28rem]`) displaying live encrypted transaction hashes and cryptographic seal confirmations.
-- **Procedural Override Section**: Allows presiding officers to flag suspicious transactions/sessions for independent judicial review while guaranteeing the **Strict Constraint**: *No biometric or plain-text voting data is ever retained*.
-
----
-
-## 📋 PRD Compliance Matrix (Arnav's Scope)
-
-| Feature | Priority | PRD v1.2 Requirement | Implementation Status | Location |
-| :--- | :---: | :--- | :---: | :--- |
-| **EPIC QR Scan + Camera UI** | **P0** | QR scanning simulation + camera feed | ✅ Complete | `src/pages/AuthPage.tsx` |
-| **Face-Match Pass/Fail Toggle** | **P0** | Biometric webcam stub with demo pass/fail controls | ✅ Complete | `src/pages/AuthPage.tsx` |
-| **Kiosk UI & Touch Pagination** | **P1** | Regional languages $\times 2$ (EN/HI), symbols, 15-30+ candidate pagination | ✅ Complete | `src/pages/BallotPage.tsx` |
-| **Duress PIN Flow** | **P1** | Coercion-resistant decoy submission via emergency PIN (9999) | ✅ Complete | `src/pages/AuthPage.tsx`<br/>`src/context/KioskContext.tsx` |
-| **Contract Rejection / Retry** | **P1** | Voter-facing error dialog on nullifier collision / rejection | ✅ Complete | `src/pages/ReviewPage.tsx` |
-| **Metadata Obfuscation** | **P1** | Batched shuffle (50-100 votes, 2-hr timeout flush) | ✅ Complete | `src/context/KioskContext.tsx` |
-| **Admin / Audit Dashboard** | **P2** | ECI backend control room, node health, ciphertext log | ✅ Complete | `src/pages/AdminDashboard.tsx` |
-| **Disputed Vote Flagging UI** | **P2** | Procedural override dispute form (no biometrics stored) | ✅ Complete | `src/pages/AdminDashboard.tsx` |
 
 ---
 
@@ -139,26 +65,63 @@ Per the **PRD v1.2** specification, all Kiosk User Experience, Voter Authenticat
 
 ```tree
 TrustBallot/
-├── README.md                      # Primary System Documentation & Handoff Reference
-└── master-kiosk/                  # Unified Master Kiosk Application
-    ├── package.json               # Dependencies & Build Scripts (React 19, Vite, Tailwind v4)
-    ├── vite.config.ts             # Vite Configuration
-    ├── index.html                 # App Mount Point
-    └── src/
-        ├── App.tsx                # Client Routing & Global Inactivity Warning
-        ├── main.tsx               # Root Mount & BrowserRouter Initialization
-        ├── index.css              # Custom Dark Scrollbars & Tailwind v4 Design Tokens
-        ├── context/
-            └── KioskContext.tsx   # Global State: Localization, Timer, Duress Mode, Batch Buffer
-        ├── pages/
-            ├── LanguagePage.tsx   # Welcome Screen & Language Selector (English / Hindi)
-            ├── AuthPage.tsx       # EPIC Entry, Face-Match Stub (Demo Controls), Duress PIN
-            ├── BallotPage.tsx     # Candidate Grid with Touch Pagination & NOTA
-            ├── ReviewPage.tsx     # Digital VVPAT Review & Rejection / Retry Modal
-            ├── SuccessPage.tsx    # Cryptographic Seal Confirmation & Auto-Reset
-            └── AdminDashboard.tsx # High-Density Linear-Style Auditor & Telemetry Room
-        └── imports/               # Assets & Party Emblems
+├── README.md                      # Primary System Documentation
+├── TrustBallot_*.md               # Comprehensive Specs (PRD, TRD, Design, Timeline)
+├── trustballot_blockchain_deep_dive.md # Detailed Blockchain & Crypto Architecture
+├── master-kiosk/                  # Unified Master Kiosk Frontend (React/Vite)
+│   ├── package.json               # Dependencies (React 19, Vite, Tailwind v4)
+│   └── src/                       # Frontend application source code
+├── backend/                       # Node.js BFT Network & Sync Services
+│   ├── bft_node.cjs               # Simulated BFT consensus node
+│   ├── sync_service.cjs           # EVM batch sync simulation
+│   └── run_network.bat            # Windows batch script to launch network
+├── tally/                         # Python Tally Server & Homomorphic Encryption
+│   ├── server.py                  # HTTP Server handling encrypted votes
+│   ├── tally.py                   # Paillier threshold logic
+│   └── run.py                     # Configurable launcher
+├── contracts/                     # Solidity Smart Contracts (Hardhat)
+│   ├── TrustBallot.sol            # Core voting orchestration contract
+│   ├── PlonkVerifier.sol          # Auto-generated ZKP verifier
+│   └── KioskRegistry.sol          # ECDSA-based kiosk authorization
+├── circuits/                      # ZK Circuits (Circom)
+│   ├── main.circom                # Primary circuit assembling constraints
+│   ├── merkle_membership.circom   # Merkle tree verification
+│   └── vote_integrity.circom      # Paillier encryption constraints
+├── load-test/                     # Load & Performance Testing (Artillery)
+│   ├── artillery.yml              # Artillery load test configuration
+│   └── mock-voter.js              # Mock voter behavior script
+├── scripts/                       # Deployment and testing scripts
+└── docker-compose.yml             # Docker composition for network services
 ```
+
+---
+
+## 🛡️ Core Technologies & Components
+
+### 1. ZKP & Smart Contracts (`contracts/` & `circuits/`)
+The blockchain layer ensures that votes are cast by legitimate voters without revealing who they voted for. It uses **Circom** to generate circuits that verify:
+- Merkle tree membership (eligibility).
+- Valid nullifier derivation (preventing double-voting).
+- Correct Paillier encryption of the vote.
+
+The generated proofs are verified on-chain by a `PlonkVerifier.sol` contract deployed via Hardhat. The `TrustBallot.sol` orchestrator handles the full validation pipeline, working alongside `KioskRegistry.sol` to authenticate physical machines.
+
+### 2. Homomorphic Tally Server (`tally/`)
+Written in Python, this server simulates a decentralized tallying process using the `phe` (Paillier Homomorphic Encryption) library. It allows encrypted votes to be tallied without ever decrypting individual ballots, operating under a simulated 3-of-4 threshold decryption consortium.
+
+### 3. BFT Node Network (`backend/`)
+A cluster of Node.js servers simulating a Byzantine Fault Tolerant (BFT) network. These nodes accept votes from kiosks, achieve quorum (e.g., 3 out of 4 nodes must agree), and seal the transactions into a verified state.
+
+### 4. Kiosk Frontend & Coercion Resistance (`master-kiosk/`)
+A responsive, touch-optimized frontend built with React and Tailwind CSS.
+- **Duress PIN**: Entering `9999` silently flags a vote as coerced, dropping the real vote and sending decoys to protect the voter.
+- **Batching Obfuscation**: Votes are held in a buffer, mixed with decoys, and flushed to the backend asynchronously to prevent timing attacks.
+
+### 5. Load & Performance Testing (`load-test/`)
+An Artillery-based load testing suite validates system throughput and latency under heavy concurrency, simulating thousands of mock voters submitting cryptographic proofs and encrypted ballots.
+
+### 6. Extensive Project Documentation
+Detailed specifications, architecture deep dives, product requirements (PRD), and technical requirements (TRD) are available in the project root as Markdown and PDF formats.
 
 ---
 
@@ -166,32 +129,58 @@ TrustBallot/
 
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
-- **npm** or **pnpm** installed
-- Web browser with webcam access (for Face-Match biometric simulation)
+- **Python**: 3.10+ (with `pip`)
+- **Git**
+- **Docker** (Optional, for containerized execution)
 
 ### Installation
+
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ArnavSemwal/TrustBallot.git
-cd TrustBallot/master-kiosk
+git clone https://github.com/TrustBallot-Team/TrustBallot.git
+cd TrustBallot
 
-# 2. Install dependencies
+# 2. Install Smart Contract & Root Dependencies
 npm install
+
+# 3. Install Frontend Dependencies
+cd master-kiosk
+npm install
+cd ..
+
+# 4. Install Backend Dependencies
+cd backend
+npm install express
+cd ..
+
+# 5. Install Python Tally Dependencies
+pip install -r tally/requirements.txt
 ```
 
-### Running Development Server
+### Running the Full MVP Network (Demo Mode)
+
+You need to run three separate services to experience the full end-to-end flow. Open three terminal windows in the project root:
+
+**Terminal 1: Start the Python Tally Server**
 ```bash
+python tally/run.py
+```
+*(Runs on port 8001)*
+
+**Terminal 2: Start the BFT Node Network**
+```bash
+node backend/bft_node.cjs
+```
+*(Runs on port 3001)*
+
+**Terminal 3: Start the Kiosk Frontend**
+```bash
+cd master-kiosk
 npm run dev
 ```
-The application will launch at:
-- **Kiosk Voter Interface**: `http://localhost:5173/` (or designated port, e.g., `http://localhost:8443/`)
-- **ECI Admin / Audit Console**: `http://localhost:5173/audit`
+*(Runs on port 5173)*
 
-### Building for Production
-```bash
-npm run build
-```
-Build output will be generated cleanly in `master-kiosk/dist/` without TypeScript or bundle errors.
+Navigate to `http://localhost:5173/` in your browser to start voting!
 
 ---
 
@@ -210,25 +199,24 @@ Build output will be generated cleanly in `master-kiosk/dist/` without TypeScrip
    - Go through Auth Step 1 and 2.
    - On Step 3 (PIN Pad), enter the emergency duress code: **`9999`**.
    - Proceed through ballot selection and submission as normal.
-   - Open browser developer tools / console: observe that the voter's actual choice was discarded and replaced with **3 silent decoy payloads** into the batch pool.
+   - The voter's actual choice is discarded and replaced with **3 silent decoy payloads** sent to the network.
 
-3. **Biometric Failure Flow**:
-   - On the webcam screen, click **Demo: Force Fail**.
-   - Observe the camera border turning red with an error modal and **Try Again** button.
-
-4. **Telemetry & Audit Room**:
-   - Navigate to `/audit`.
-   - Review BFT Node consensus indicators (ECI, Supreme Court, State EC, Auditor).
+3. **Telemetry & Audit Room**:
+   - Navigate to `http://localhost:5173/audit`.
+   - Review BFT Node consensus indicators.
    - Inspect the real-time ciphertext terminal with auto-scrolling transaction hashes.
-   - Test procedural dispute flagging by submitting a mock session token.
+
+4. **Verify Backend State**:
+   - Check the running Python server's health: `http://localhost:8001/status`
+   - Check the cryptographic transactions sealed by the tally server: `http://localhost:8001/transactions`
+
+5. **Load Testing**:
+   - Navigate to the `load-test/` directory.
+   - Run `npx artillery run artillery.yml` to simulate high-concurrency voting traffic.
 
 ---
 
-## 🔄 Checkpoint & Session Handoff Reference
-
-> **For Collaborators & AI Assistants (Anushka, Shashwat, or Next Engineering Sessions)**:
-- **Current State**: All frontend components, kiosk UX screens, coercion mitigation mechanisms, and middleware simulation assigned to **Arnav** are **100% complete, verified, and compiling cleanly**.
-- **Integration Touchpoints**:
-  - **Crypto Layer (Anushka)**: Real ZKP generation and Paillier homomorphic tallying will replace the mock payloads in `src/context/KioskContext.tsx` (`submitVote`).
-  - **Backend & Networking (Shashwat)**: The websocket stream mock in `src/pages/AdminDashboard.tsx` (`wss://kiosk-mesh.local/stream`) and the batch flush dispatch in `KioskContext.tsx` (`flushPool()`) are ready to be plugged into the real BFT node networking API.
-- **Zero Scroll Mandate**: Maintain the `h-screen overflow-hidden` wrapper on all voter-facing pages (`/auth`, `/ballot`, `/review`, `/success`) to ensure physical kiosk screen immutability. Only `/audit` supports natural vertical scrolling.
+## 👥 Team
+- **Anushka**: Blockchain & Crypto Lead (ZKP circuits, smart contracts, homomorphic tally)
+- **Shashwat**: Backend/Infra Lead (BFT consensus network, EVM batch sync)
+- **Arnav**: Frontend/UX & Middleware Lead (Kiosk UI, coercion resistance, metadata obfuscation)
