@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { get, set } from 'idb-keyval';
 
 export type Language = 'en' | 'hi';
 
@@ -43,6 +44,20 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const [secondsLeft, setSecondsLeft] = useState(SESSION_TIMEOUT_SECONDS);
   const [votePool, setVotePool] = useState<any[]>([]);
   const [duressMode, setDuressMode] = useState(false);
+  
+  // TASK R8: Load vote pool from IndexedDB on startup
+  useEffect(() => {
+    get('trustballot-vote-pool').then((val) => {
+      if (val && Array.isArray(val)) {
+        setVotePool(val);
+      }
+    }).catch(e => console.error('Failed to load vote pool from IndexedDB:', e));
+  }, []);
+
+  // TASK R8: Save vote pool to IndexedDB whenever it changes
+  useEffect(() => {
+    set('trustballot-vote-pool', votePool).catch(e => console.error('Failed to save vote pool to IndexedDB:', e));
+  }, [votePool]);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -123,16 +138,17 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const j = randomBuffer[0] % (i + 1);
       [poolToFlush[i], poolToFlush[j]] = [poolToFlush[j], poolToFlush[i]];
     }
-    setVotePool([]);
     
     console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', poolToFlush);
+    const successfullySent = new Set();
+    
     for (const payload of poolToFlush) {
       const candidateStr = payload.candidateId || 'c0';
       const voteInt = parseInt(candidateStr.replace(/[^0-9]/g, '')) || 0;
       
       try {
         const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
-        await fetch(`${BACKEND_URL}/add_vote`, {
+        const response = await fetch(`${BACKEND_URL}/add_vote`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // TASK R2: Pass isDecoy to the backend
@@ -141,10 +157,20 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
             isDecoy: (payload as any).isDecoy || false 
           })
         });
+        
+        // TASK R8: Only remove from pool if the request actually succeeds
+        if (response.ok) {
+          successfullySent.add(payload);
+        } else {
+          console.error("Backend rejected the payload", response.status);
+        }
       } catch (e) {
         console.error("Failed to send payload to blockchain:", e);
       }
     }
+    
+    // Remove the successfully sent votes from the pool (which triggers the IndexedDB save)
+    setVotePool(prev => prev.filter(p => !successfullySent.has(p)));
 
     if (flushTimerRef.current) {
       clearTimeout(flushTimerRef.current);
