@@ -5,14 +5,14 @@
 - **Nullifier Logic:** `nullifier = Hash(private_credential || election_id)`.
 - **Audit Findings:** 
   - The nullifier is correctly exposed as a public signal.
-  - `TrustBallot.sol` maintains a `mapping(uint256 => mapping(uint256 => bool)) public hasVoted` which correctly flags `electionId -> nullifier -> true`.
+  - `TrustBallot.sol` maintains a `mapping(uint256 => mapping(uint256 => bool)) public spentNullifiers` which correctly flags `electionId -> nullifier -> true`.
   - **Constraint Validation:** The constraints in `vote_integrity.circom` prevent double-voting. If a voter attempts to submit a second vote for the same `electionId`, the deterministic nullifier will collide and be rejected by the smart contract.
 
 ## 2. Universal Setup (PLONK)
 - **Overview:** TrustBallot utilizes PLONK over Groth16.
 - **Audit Findings:**
   - PLONK uses a universal trusted setup (Powers of Tau). We utilized `pot14_final.ptau`.
-  - This eliminates the "toxic waste" risk associated with per-circuit trusted setups (like Groth16), mitigating the risk of the ECI or consortium forging proofs.
+  - This reduces the trusted-setup risk associated with per-circuit trusted setups (like Groth16) by relying on a public MPC ceremony, though it does not completely eliminate the need for a trusted setup.
   - The `verification_key.json` and `PlonkVerifier.sol` were successfully generated and matched.
 
 ## 3. Homomorphic Tally (Paillier)
