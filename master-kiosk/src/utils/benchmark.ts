@@ -12,5 +12,5 @@ export const Benchmark = {
     const bytes = new Blob([str]).size;
     console.log(`📦 [BENCHMARK] Payload Size: ${bytes} bytes`);
     return bytes;
-  }
+  },
 };

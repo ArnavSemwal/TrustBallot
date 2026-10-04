@@ -4,15 +4,48 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../imports/ymmetry.png';
 import { useKiosk } from '../context/KioskContext';
 import { verifyEpicSignature } from '../crypto/epicAuth';
+import { Html5Qrcode } from 'html5-qrcode';
 
 function QRCodeSVG() {
   return (
-    <svg viewBox="0 0 80 80" className="w-28 h-28 text-[#028090]" fill="currentColor" aria-hidden="true">
-      <rect x="4" y="4" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+    <svg
+      viewBox="0 0 80 80"
+      className="w-28 h-28 text-[#028090]"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="4"
+        width="24"
+        height="24"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+      />
       <rect x="10" y="10" width="12" height="12" rx="1" />
-      <rect x="52" y="4" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect
+        x="52"
+        y="4"
+        width="24"
+        height="24"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+      />
       <rect x="58" y="10" width="12" height="12" rx="1" />
-      <rect x="4" y="52" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="3" />
+      <rect
+        x="4"
+        y="52"
+        width="24"
+        height="24"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+      />
       <rect x="10" y="58" width="12" height="12" rx="1" />
       <rect x="34" y="4" width="12" height="4" rx="1" />
       <rect x="34" y="12" width="8" height="4" rx="1" />
@@ -44,53 +77,53 @@ type ScanPhase = 'scanning' | 'success' | 'fail';
 
 const t = {
   en: {
-    step1: "Step 1 of 3: Voter Verification",
-    scanQr: "Scan Your Voter ID / EPIC QR Code",
-    awaitingQr: "Awaiting QR Code",
-    holdQr: "Hold your QR code inside the frame",
-    enterEpic: "Enter EPIC Number Manually",
-    verifyProceed: "Verify & Proceed",
-    step2: "Step 2 of 3: Biometric Verification",
-    verifying: "Verifying Biometrics…",
-    verified: "Identity Verified",
-    verifyFailed: "Verification Failed",
-    holdStill: "Hold still — matching against EPIC record",
-    tryAgain: "Try Again",
-    proceeding: "Proceeding to secure ballot…",
-    demoForcePass: "Demo: Force Pass",
-    demoForceFail: "Demo: Force Fail",
-    step3: "Step 3 of 3: Secure Voting PIN",
-    enterPin: "Enter your 4-digit voting PIN",
-    pinPlaceholder: "XXXX",
-    submitPin: "Confirm Identity",
-    consortium: "Consortium Secured Session",
-    placeholder: "e.g. 1234567890",
-    langToggle: "English ⇄ हिंदी"
+    step1: 'Step 1 of 3: Voter Verification',
+    scanQr: 'Scan Your Voter ID / EPIC QR Code',
+    awaitingQr: 'Awaiting QR Code',
+    holdQr: 'Hold your QR code inside the frame',
+    enterEpic: 'Enter EPIC Number Manually',
+    verifyProceed: 'Verify & Proceed',
+    step2: 'Step 2 of 3: Biometric Verification',
+    verifying: 'Verifying Biometrics…',
+    verified: 'Identity Verified',
+    verifyFailed: 'Verification Failed',
+    holdStill: 'Hold still — matching against EPIC record',
+    tryAgain: 'Try Again',
+    proceeding: 'Proceeding to secure ballot…',
+    demoForcePass: 'Demo: Force Pass',
+    demoForceFail: 'Demo: Force Fail',
+    step3: 'Step 3 of 3: Secure Voting PIN',
+    enterPin: 'Enter your 4-digit voting PIN',
+    pinPlaceholder: 'XXXX',
+    submitPin: 'Confirm Identity',
+    consortium: 'Consortium Secured Session',
+    placeholder: 'e.g. 1234567890',
+    langToggle: 'English ⇄ हिंदी',
   },
   hi: {
-    step1: "चरण 1 (3 में से): मतदाता सत्यापन",
-    scanQr: "अपना वोटर आईडी / एपिक क्यूआर कोड स्कैन करें",
-    awaitingQr: "क्यूआर कोड की प्रतीक्षा है",
-    holdQr: "अपना क्यूआर कोड फ्रेम के अंदर रखें",
-    enterEpic: "एपिक नंबर मैन्युअल रूप से दर्ज करें",
-    verifyProceed: "सत्यापित करें और आगे बढ़ें",
-    step2: "चरण 2 (3 में से): बायोमेट्रिक सत्यापन",
-    verifying: "बायोमेट्रिक्स सत्यापित हो रहा है…",
-    verified: "पहचान सत्यापित",
-    verifyFailed: "सत्यापन विफल रहा",
-    holdStill: "स्थिर रहें — एपिक रिकॉर्ड से मिलान किया जा रहा है",
-    tryAgain: "पुनः प्रयास करें",
-    proceeding: "सुरक्षित बैलेट की ओर बढ़ रहे हैं…",
-    demoForcePass: "डेमो: फोर्स पास (सफल)",
-    demoForceFail: "डेमो: फोर्स फेल (असफल)",
-    step3: "चरण 3 (3 में से): सुरक्षित वोटिंग पिन",
-    enterPin: "अपना 4 अंकों का वोटिंग पिन दर्ज करें",
-    pinPlaceholder: "XXXX",
-    submitPin: "पहचान की पुष्टि करें",
-    consortium: "कंसोर्टियम सुरक्षित सत्र",
-    placeholder: "उदा. 1234567890",
-    langToggle: "हिंदी ⇄ English"
-  }
+    step1: 'चरण 1 (3 में से): मतदाता सत्यापन',
+    scanQr: 'अपना वोटर आईडी / एपिक क्यूआर कोड स्कैन करें',
+    awaitingQr: 'क्यूआर कोड की प्रतीक्षा है',
+    holdQr: 'अपना क्यूआर कोड फ्रेम के अंदर रखें',
+    enterEpic: 'एपिक नंबर मैन्युअल रूप से दर्ज करें',
+    verifyProceed: 'सत्यापित करें और आगे बढ़ें',
+    step2: 'चरण 2 (3 में से): बायोमेट्रिक सत्यापन',
+    verifying: 'बायोमेट्रिक्स सत्यापित हो रहा है…',
+    verified: 'पहचान सत्यापित',
+    verifyFailed: 'सत्यापन विफल रहा',
+    holdStill: 'स्थिर रहें — एपिक रिकॉर्ड से मिलान किया जा रहा है',
+    tryAgain: 'पुनः प्रयास करें',
+    proceeding: 'सुरक्षित बैलेट की ओर बढ़ रहे हैं…',
+    demoForcePass: 'डेमो: फोर्स पास (सफल)',
+    demoForceFail: 'डेमो: फोर्स फेल (असफल)',
+    step3: 'चरण 3 (3 में से): सुरक्षित वोटिंग पिन',
+    enterPin: 'अपना 4 अंकों का वोटिंग पिन दर्ज करें',
+    pinPlaceholder: 'XXXX',
+    submitPin: 'पहचान की पुष्टि करें',
+    consortium: 'कंसोर्टियम सुरक्षित सत्र',
+    placeholder: 'उदा. 1234567890',
+    langToggle: 'हिंदी ⇄ English',
+  },
 };
 
 export default function AuthPage() {
@@ -103,10 +136,52 @@ export default function AuthPage() {
   // ── Step 1: EPIC/QR entry state ──
   const [epicNumber, setEpicNumber] = useState('');
   function pressKey(val: string) {
-    setEpicNumber(prev => (prev.length < 10 ? prev + val : prev));
+    setEpicNumber((prev) => (prev.length < 10 ? prev + val : prev));
   }
-  function clearAll() { setEpicNumber(''); }
-  function deleteLast() { setEpicNumber(prev => prev.slice(0, -1)); }
+  function clearAll() {
+    setEpicNumber('');
+  }
+  function deleteLast() {
+    setEpicNumber((prev) => prev.slice(0, -1));
+  }
+
+  // TASK R12: QR Scanning
+  useEffect(() => {
+    if (authStep !== 'qr') return;
+
+    let html5QrCode: Html5Qrcode | null = null;
+    let isMounted = true;
+
+    // Small delay to ensure the DOM element is rendered
+    setTimeout(() => {
+      if (!isMounted) return;
+      html5QrCode = new Html5Qrcode('qr-reader');
+
+      html5QrCode
+        .start(
+          { facingMode: 'user' }, // using user facing for kiosk/webcam
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            // Keep alphanumeric parts of the payload (EPIC format can be 10 chars, e.g. ABC1234567 or 10 digits)
+            const cleanText = decodedText
+              .replace(/[^a-zA-Z0-9]/g, '')
+              .substring(0, 10)
+              .toUpperCase();
+            setEpicNumber(cleanText);
+            html5QrCode?.stop().catch(console.error);
+          },
+          () => {} // ignore scan errors
+        )
+        .catch(console.error);
+    }, 500);
+
+    return () => {
+      isMounted = false;
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(console.error);
+      }
+    };
+  }, [authStep]);
 
   function handleVerifyEpic() {
     if (epicNumber.length !== 10) return;
@@ -135,14 +210,18 @@ export default function AuthPage() {
   // ── Step 3: PIN ──
   const [pinNumber, setPinNumber] = useState('');
   function pressPinKey(val: string) {
-    setPinNumber(prev => (prev.length < 4 ? prev + val : prev));
+    setPinNumber((prev) => (prev.length < 4 ? prev + val : prev));
   }
-  function clearPin() { setPinNumber(''); }
-  function deleteLastPin() { setPinNumber(prev => prev.slice(0, -1)); }
+  function clearPin() {
+    setPinNumber('');
+  }
+  function deleteLastPin() {
+    setPinNumber((prev) => prev.slice(0, -1));
+  }
 
   function handleSubmitPin() {
     if (pinNumber.length !== 4) return;
-    
+
     // TASK R3: Real PIN Check
     if (pinNumber !== '1234' && pinNumber !== '9999') {
       alert(selectedLanguage === 'hi' ? 'गलत पिन' : 'Invalid PIN');
@@ -156,15 +235,15 @@ export default function AuthPage() {
     } else {
       setDuressMode(false);
     }
-    
+
     // TASK R3: Wire in verifyEpicSignature on a test payload
     // We pass dummy values here to satisfy the signature check logic for the demo/review
     const dummyPayload = { epic: epicNumber, sessionParams: 'dummy' };
     const isValid = verifyEpicSignature(dummyPayload as any, 'dummy_signature');
     if (!isValid) {
-      console.warn("EPIC Signature verification returned false, but allowing for demo.");
+      console.warn('EPIC Signature verification returned false, but allowing for demo.');
     }
-    
+
     setVoterVerified(epicNumber);
     navigate('/ballot', { replace: true });
   }
@@ -197,11 +276,20 @@ export default function AuthPage() {
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-                <span className={`w-2 h-2 rounded-full ${scanPhase === 'fail' ? 'bg-red-500' : 'bg-[#028090] animate-pulse'}`}></span>
+                <span
+                  className={`w-2 h-2 rounded-full ${scanPhase === 'fail' ? 'bg-red-500' : 'bg-[#028090] animate-pulse'}`}
+                ></span>
                 {currentLang.step2}
               </div>
-              <h1 className="text-2xl font-bold text-[#0D233A] text-center tracking-tight" style={{ lineHeight: '32px' }}>
-                {scanPhase === 'scanning' ? currentLang.verifying : scanPhase === 'fail' ? currentLang.verifyFailed : currentLang.verified}
+              <h1
+                className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
+                style={{ lineHeight: '32px' }}
+              >
+                {scanPhase === 'scanning'
+                  ? currentLang.verifying
+                  : scanPhase === 'fail'
+                    ? currentLang.verifyFailed
+                    : currentLang.verified}
               </h1>
             </div>
 
@@ -218,7 +306,9 @@ export default function AuthPage() {
 
         {/* ── MAIN BODY 70vh (Webcam View) ── */}
         <main className="h-[70vh] shrink-0 flex flex-col items-center justify-center gap-4 px-8 overflow-hidden">
-          <div className={`relative w-[380px] h-[380px] rounded-3xl overflow-hidden border-4 shadow-xl bg-white ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}>
+          <div
+            className={`relative w-[380px] h-[380px] rounded-3xl overflow-hidden border-4 shadow-xl bg-white ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}
+          >
             <Webcam
               audio={false}
               mirrored
@@ -227,22 +317,30 @@ export default function AuthPage() {
             />
 
             {/* Corner brackets */}
-            <span className={`absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 rounded-tl-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`} />
-            <span className={`absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 rounded-tr-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`} />
-            <span className={`absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 rounded-bl-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`} />
-            <span className={`absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 rounded-br-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`} />
+            <span
+              className={`absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 rounded-tl-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}
+            />
+            <span
+              className={`absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 rounded-tr-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}
+            />
+            <span
+              className={`absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 rounded-bl-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}
+            />
+            <span
+              className={`absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 rounded-br-lg pointer-events-none ${scanPhase === 'fail' ? 'border-red-500' : scanPhase === 'success' ? 'border-green-500' : 'border-[#028090]'}`}
+            />
 
             {/* Laser Line */}
             {scanPhase === 'scanning' && (
               <div className="absolute left-0 w-full h-[2px] bg-[#F4A261] shadow-[0_0_15px_#F4A261] animate-scan-laser pointer-events-none z-10" />
             )}
-            
+
             {/* Fail Overlay */}
             {scanPhase === 'fail' && (
               <div className="absolute inset-0 bg-red-900/30 flex items-center justify-center z-10 backdrop-blur-sm">
                 <div className="bg-white px-6 py-3 rounded-xl shadow-lg border-2 border-red-500 text-center">
                   <p className="text-red-600 font-bold mb-2">{currentLang.verifyFailed}</p>
-                  <button 
+                  <button
                     onClick={() => setScanPhase('scanning')}
                     className="bg-red-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600"
                   >
@@ -256,14 +354,25 @@ export default function AuthPage() {
             {scanPhase === 'success' && (
               <div className="absolute inset-0 bg-[#028090]/20 flex items-center justify-center z-10 backdrop-blur-sm">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(2,128,144,0.6)]">
-                  <svg className="w-10 h-10 text-[#028090]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-10 h-10 text-[#028090]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               </div>
             )}
           </div>
-          
+
           <div className="text-center w-full max-w-sm mt-2 min-h-[24px]">
             {scanPhase === 'scanning' && (
               <p className="text-[#0D233A]/60 font-medium tracking-wide text-[15px] animate-pulse">
@@ -276,7 +385,7 @@ export default function AuthPage() {
               </p>
             )}
           </div>
-          
+
           {/* ── Demo Toggle Buttons ── */}
           <div className="flex gap-4 mt-4">
             <button
@@ -297,8 +406,18 @@ export default function AuthPage() {
         {/* ── FOOTER 15vh ── */}
         <footer className="h-[15vh] shrink-0 flex items-center justify-center">
           <div className="inline-flex items-center justify-center rounded-2xl border-2 border-[#0D233A]/10 bg-white/50 px-8 py-4 backdrop-blur-sm">
-            <svg className="mr-3 h-5 w-5 text-[#028090]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <svg
+              className="mr-3 h-5 w-5 text-[#028090]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
             </svg>
             <span className="text-sm font-semibold tracking-widest text-[#0D233A]/60 uppercase">
               {currentLang.consortium}
@@ -318,13 +437,20 @@ export default function AuthPage() {
         {/* ── HEADER 15vh ── */}
         <header className="h-[15vh] shrink-0 flex flex-col relative justify-center">
           <div className="w-full flex items-center justify-between px-6">
-            <img src={logo} alt="TrustBallot" className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10" />
+            <img
+              src={logo}
+              alt="TrustBallot"
+              className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10"
+            />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
                 <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
                 {currentLang.step3}
               </div>
-              <h1 className="text-2xl font-bold text-[#0D233A] text-center tracking-tight" style={{ lineHeight: '32px' }}>
+              <h1
+                className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
+                style={{ lineHeight: '32px' }}
+              >
                 {currentLang.enterPin}
               </h1>
             </div>
@@ -342,7 +468,6 @@ export default function AuthPage() {
         {/* ── MAIN BODY 70vh ── */}
         <main className="h-[70vh] shrink-0 flex flex-col items-center justify-center gap-8 px-8">
           <div className="flex flex-col items-center max-w-sm w-full gap-8">
-            
             {/* PIN Display */}
             <div className="w-full relative">
               <input
@@ -356,7 +481,7 @@ export default function AuthPage() {
 
             {/* Keypad */}
             <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
-              {PAD_KEYS.map(n => (
+              {PAD_KEYS.map((n) => (
                 <button
                   key={n}
                   type="button"
@@ -388,8 +513,6 @@ export default function AuthPage() {
                 ⌫
               </button>
             </div>
-            
-
           </div>
         </main>
 
@@ -414,7 +537,6 @@ export default function AuthPage() {
   // ═══════════════════════════════════════════════════════════
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#F9F9FB] text-[#0D233A] font-sans select-none">
-
       {/* ── HEADER 15vh ── */}
       <header className="h-[15vh] shrink-0 flex flex-col relative justify-center">
         <div className="w-full flex items-center justify-between px-6">
@@ -429,7 +551,10 @@ export default function AuthPage() {
               <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
               {currentLang.step1}
             </div>
-            <h1 className="text-2xl font-bold text-[#0D233A] text-center tracking-tight" style={{ lineHeight: '32px' }}>
+            <h1
+              className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
+              style={{ lineHeight: '32px' }}
+            >
               {currentLang.scanQr}
             </h1>
           </div>
@@ -448,26 +573,28 @@ export default function AuthPage() {
 
       {/* ── MAIN BODY 70vh ── */}
       <main className="h-[70vh] shrink-0 grid grid-cols-2 gap-0 px-8 py-4 overflow-hidden">
-
         {/* LEFT: Scanner */}
         <div className="flex flex-col items-center justify-center gap-3 pr-6 border-r border-[#0D233A]/10">
           <div
+            id="qr-reader"
             className="relative aspect-square border-4 border-dashed border-[#028090] rounded-2xl flex flex-col items-center justify-center bg-white/70 overflow-hidden"
-            style={{ height: 'min(42vw, 54vh)' }}
+            style={{ height: 'min(42vw, 54vh)', width: 'min(42vw, 54vh)' }}
             aria-label="QR code scanner area"
           >
-            <span className="absolute top-2.5 left-2.5 w-7 h-7 border-t-[3px] border-l-[3px] border-[#028090] rounded-tl-lg" />
-            <span className="absolute top-2.5 right-2.5 w-7 h-7 border-t-[3px] border-r-[3px] border-[#028090] rounded-tr-lg" />
-            <span className="absolute bottom-2.5 left-2.5 w-7 h-7 border-b-[3px] border-l-[3px] border-[#028090] rounded-bl-lg" />
-            <span className="absolute bottom-2.5 right-2.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#028090] rounded-br-lg" />
+            <span className="absolute top-2.5 left-2.5 w-7 h-7 border-t-[3px] border-l-[3px] border-[#028090] rounded-tl-lg z-10" />
+            <span className="absolute top-2.5 right-2.5 w-7 h-7 border-t-[3px] border-r-[3px] border-[#028090] rounded-tr-lg z-10" />
+            <span className="absolute bottom-2.5 left-2.5 w-7 h-7 border-b-[3px] border-l-[3px] border-[#028090] rounded-bl-lg z-10" />
+            <span className="absolute bottom-2.5 right-2.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#028090] rounded-br-lg z-10" />
 
-            <QRCodeSVG />
+            {/* This inner div is replaced by html5-qrcode's video feed */}
+            <div id="qr-reader-placeholder" className="flex flex-col items-center z-0">
+              <QRCodeSVG />
+              <p className="mt-3 text-xs font-medium uppercase tracking-widest text-[#028090] opacity-60">
+                {currentLang.awaitingQr}
+              </p>
+            </div>
 
-            <p className="mt-3 text-xs font-medium uppercase tracking-widest text-[#028090] opacity-60">
-              {currentLang.awaitingQr}
-            </p>
-
-            <div className="scanner-laser absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090]" />
+            <div className="scanner-laser absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090] z-10" />
           </div>
 
           <p className="text-sm font-medium text-[#0D233A] opacity-65 text-center">
@@ -500,7 +627,7 @@ export default function AuthPage() {
 
           {/* Keypad */}
           <div className="grid grid-cols-3 gap-2.5">
-            {PAD_KEYS.map(n => (
+            {PAD_KEYS.map((n) => (
               <button
                 key={n}
                 type="button"

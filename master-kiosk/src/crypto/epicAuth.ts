@@ -7,10 +7,10 @@
 
 // In a real application, this would be an imported crypto library like 'ethers' or 'crypto-js'.
 // Using stubbed imports or Web Crypto API.
-import { ethers } from "ethers";
+import { ethers } from 'ethers';
 
 // For MVP, we define a stubbed ECI public key (address) that represents the official ECI signing key.
-const ECI_PUBLIC_KEY = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Example local hardhat address
+const ECI_PUBLIC_KEY = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Example local hardhat address
 
 export interface EpicPayload {
   epicHash: string;
@@ -44,7 +44,7 @@ export function verifyEpicSignature(payload: EpicPayload, signature: string): bo
     // 4. Compare with the known ECI public key
     return recoveredAddress.toLowerCase() === ECI_PUBLIC_KEY.toLowerCase();
   } catch (error) {
-    console.error("Signature verification failed:", error);
+    console.error('Signature verification failed:', error);
     return false;
   }
 }

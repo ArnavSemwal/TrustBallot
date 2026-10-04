@@ -2,13 +2,16 @@
 @import 'tailwindcss';
 
 :root {
-  --color-background: #F9F9FB;
-  --color-primary: #0D233A;
+  --color-background: #f9f9fb;
+  --color-primary: #0d233a;
   --color-cta: #028090;
-  --color-accent: #F4A261;
-  --color-foreground: #2B2D42;
+  --color-accent: #f4a261;
+  --color-foreground: #2b2d42;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
   --font-devanagari: 'Noto Sans Devanagari', 'Noto Sans', sans-serif;
 }
 
@@ -26,9 +29,15 @@ body {
 }
 
 @keyframes scan {
-  0%   { top: 12%; }
-  50%  { top: 82%; }
-  100% { top: 12%; }
+  0% {
+    top: 12%;
+  }
+  50% {
+    top: 82%;
+  }
+  100% {
+    top: 12%;
+  }
 }
 
 .scanner-laser {
@@ -49,12 +58,12 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000; 
+  background: #000000;
 }
 ::-webkit-scrollbar-thumb {
-  background: #222222; 
+  background: #222222;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #333333; 
+  background: #333333;
 }

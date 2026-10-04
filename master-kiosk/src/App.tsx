@@ -26,11 +26,13 @@ export default function App() {
   if (secondsLeft <= 0) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0D233A] text-white font-sans select-none px-8 text-center gap-4">
-        <div className="w-20 h-20 rounded-full border-4 border-red-400 flex items-center justify-center text-4xl">⏱</div>
+        <div className="w-20 h-20 rounded-full border-4 border-red-400 flex items-center justify-center text-4xl">
+          ⏱
+        </div>
         <h1 className="text-3xl font-bold">Session Timed Out</h1>
         <p className="text-white/70 max-w-md">
-          No vote was recorded. For security, this session has been destroyed.
-          Please contact the polling officer to restart the process.
+          No vote was recorded. For security, this session has been destroyed. Please contact the
+          polling officer to restart the process.
         </p>
       </div>
     );

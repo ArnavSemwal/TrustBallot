@@ -4,10 +4,10 @@ import { get } from 'idb-keyval';
 export default function AdminDashboard() {
   const [stream, setStream] = useState<string[]>([]);
   const terminalRef = useRef<HTMLDivElement>(null);
-  
+
   const [disputeInput, setDisputeInput] = useState('');
   const [disputeSuccess, setDisputeSuccess] = useState(false);
-  
+
   const [isOffline, setIsOffline] = useState(false);
   const [queuedVotes, setQueuedVotes] = useState(0);
 
@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const startupLog = `[${new Date().toISOString()}] SYSTEM_STARTUP: Telemetry stream initialized.`;
     const syncLog = `[${new Date().toISOString()}] NODE_SYNC: Consortium connection established.`;
-    
+
     // Initial data
     setStream([startupLog, syncLog]);
 
@@ -24,13 +24,13 @@ export default function AdminDashboard() {
         const pool = await get('trustballot-vote-pool');
         setQueuedVotes(Array.isArray(pool) ? pool.length : 0);
       } catch (e) {
-        console.error("Failed to read local pool", e);
+        console.error('Failed to read local pool', e);
       }
 
       try {
         const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
         const response = await fetch(`${BACKEND_URL}/transactions`);
-        if (!response.ok) throw new Error("Network response was not ok");
+        if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         if (data && data.transactions) {
           setStream([startupLog, syncLog, ...data.transactions]);
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
         setIsOffline(true);
       }
     };
-    
+
     // Poll every 2 seconds
     const interval = setInterval(fetchData, 2000);
     fetchData();
@@ -65,33 +65,43 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen w-full bg-[#000000] text-[#ededed] p-6 md:p-10 font-sans flex flex-col gap-8">
-      
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#222] pb-6">
         <div>
-          <h1 className="text-[#ededed] font-medium text-base tracking-tight">ECI Telemetry & Audit Console</h1>
+          <h1 className="text-[#ededed] font-medium text-base tracking-tight">
+            ECI Telemetry & Audit Console
+          </h1>
           <p className="text-[#888] text-xs mt-1">Secure Backend Control Room</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="border border-[#333] text-[#888] px-2 py-0.5 text-[10px] uppercase flex items-center gap-1.5 rounded-sm">
-            {isOffline ? <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" /> : <span className="w-1.5 h-1.5 bg-[#2e7d32]" />}
-            {isOffline ? <span className="text-red-400">Disconnected</span> : "System Secure"}
+            {isOffline ? (
+              <span className="w-1.5 h-1.5 bg-red-500 animate-pulse" />
+            ) : (
+              <span className="w-1.5 h-1.5 bg-[#2e7d32]" />
+            )}
+            {isOffline ? <span className="text-red-400">Disconnected</span> : 'System Secure'}
           </div>
           <div className="border border-[#333] text-[#888] px-2 py-0.5 text-[10px] uppercase rounded-sm flex gap-2 items-center">
-            {isOffline ? "Lost Quorum / Telemetry Down" : "Healthy / 3-of-4 Quorum Active"}
-            <span className="bg-[#222] text-[#ccc] px-1.5 py-0.5 rounded-sm">Queue: {queuedVotes}</span>
+            {isOffline ? 'Lost Quorum / Telemetry Down' : 'Healthy / 3-of-4 Quorum Active'}
+            <span className="bg-[#222] text-[#ccc] px-1.5 py-0.5 rounded-sm">
+              Queue: {queuedVotes}
+            </span>
           </div>
         </div>
       </header>
 
       {/* Node Health Section */}
       <section>
-        <h2 className="text-[#888] text-xs font-medium uppercase tracking-widest mb-3">BFT Consortium Status</h2>
+        <h2 className="text-[#888] text-xs font-medium uppercase tracking-widest mb-3">
+          BFT Consortium Status
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          
           <div className="bg-[#111111] border border-[#222] rounded-sm p-4 flex flex-col justify-between">
             <div>
-              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">Node_01</span>
+              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
+                Node_01
+              </span>
               <h3 className="text-[#ededed] text-sm mt-1 font-mono">ECI Primary</h3>
             </div>
             <div className="flex items-center gap-2 mt-6">
@@ -102,7 +112,9 @@ export default function AdminDashboard() {
 
           <div className="bg-[#111111] border border-[#222] rounded-sm p-4 flex flex-col justify-between">
             <div>
-              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">Node_02</span>
+              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
+                Node_02
+              </span>
               <h3 className="text-[#ededed] text-sm mt-1 font-mono">Supreme Court</h3>
             </div>
             <div className="flex items-center gap-2 mt-6">
@@ -113,7 +125,9 @@ export default function AdminDashboard() {
 
           <div className="bg-[#111111] border border-[#222] rounded-sm p-4 flex flex-col justify-between">
             <div>
-              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">Node_03</span>
+              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
+                Node_03
+              </span>
               <h3 className="text-[#ededed] text-sm mt-1 font-mono">State EC Node</h3>
             </div>
             <div className="flex items-center gap-2 mt-6">
@@ -124,7 +138,9 @@ export default function AdminDashboard() {
 
           <div className="bg-[#111111] border border-[#222] rounded-sm p-4 flex flex-col justify-between">
             <div>
-              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">Node_04</span>
+              <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
+                Node_04
+              </span>
               <h3 className="text-[#ededed] text-sm mt-1 font-mono">Independent Auditor</h3>
             </div>
             <div className="flex items-center gap-2 mt-6">
@@ -132,7 +148,6 @@ export default function AdminDashboard() {
               <span className="text-[#888] text-[10px] uppercase font-mono">Online / Synced</span>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -140,12 +155,16 @@ export default function AdminDashboard() {
       <section className="border-y border-[#222] py-4 my-4 relative">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-[#888] text-xs font-medium uppercase tracking-widest flex items-center gap-2">
-            Encrypted Ciphertext Stream 
-            {isOffline && <span className="bg-red-900/50 text-red-400 px-2 py-0.5 rounded-sm text-[9px] animate-pulse">OFFLINE</span>}
+            Encrypted Ciphertext Stream
+            {isOffline && (
+              <span className="bg-red-900/50 text-red-400 px-2 py-0.5 rounded-sm text-[9px] animate-pulse">
+                OFFLINE
+              </span>
+            )}
           </h2>
           <span className="text-[#666] text-[10px] font-mono">wss://kiosk-mesh.local/stream</span>
         </div>
-        <div 
+        <div
           ref={terminalRef}
           className={`h-[28rem] overflow-y-auto w-full font-mono text-[10px] leading-tight block transition-opacity ${isOffline ? 'opacity-30' : 'opacity-100'}`}
         >
@@ -157,7 +176,9 @@ export default function AdminDashboard() {
                   <>
                     <span className="text-[#555]">{log.split('] ')[0]}] </span>
                     <span className="text-[#888]">TX_HASH: </span>
-                    <span className="text-[#a3a3a3]">{log.split('TX_HASH: ')[1].split(' STATUS:')[0]}</span>
+                    <span className="text-[#a3a3a3]">
+                      {log.split('TX_HASH: ')[1].split(' STATUS:')[0]}
+                    </span>
                     <span className="text-[#2e7d32]"> STATUS: CRYPTOGRAPHICALLY_SEALED</span>
                   </>
                 ) : (
@@ -171,9 +192,13 @@ export default function AdminDashboard() {
 
       {/* Procedural Override Section */}
       <div className="border-t border-[#222] pt-6 mt-2">
-        <h3 className="text-[#ededed] font-medium tracking-wide mb-1 text-sm uppercase">Procedural Override</h3>
-        <p className="text-[#888] text-[11px] mb-4">Flag a suspicious session or transaction for independent manual audit.</p>
-        
+        <h3 className="text-[#ededed] font-medium tracking-wide mb-1 text-sm uppercase">
+          Procedural Override
+        </h3>
+        <p className="text-[#888] text-[11px] mb-4">
+          Flag a suspicious session or transaction for independent manual audit.
+        </p>
+
         <form onSubmit={handleFlagDispute} className="flex items-center gap-3">
           <input
             type="text"
@@ -182,7 +207,7 @@ export default function AdminDashboard() {
             placeholder="Enter Session Token / TX Hash..."
             className="bg-transparent border border-[#333] text-[#ededed] rounded-sm px-4 py-2 text-sm w-full max-w-md focus:border-[#666] outline-none transition-colors"
           />
-          <button 
+          <button
             type="submit"
             disabled={!disputeInput.trim()}
             className="bg-[#ededed] text-black hover:bg-white rounded-sm px-5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -196,8 +221,11 @@ export default function AdminDashboard() {
             System: Session marked for procedural review.
           </div>
         )}
-        
-        <span className="text-[10px] text-red-500/80 mt-3 block font-mono">Strict Constraint: No biometric or plain-text voting data is retained during this procedure.</span>
+
+        <span className="text-[10px] text-red-500/80 mt-3 block font-mono">
+          Strict Constraint: No biometric or plain-text voting data is retained during this
+          procedure.
+        </span>
       </div>
     </div>
   );
