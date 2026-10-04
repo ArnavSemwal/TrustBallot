@@ -3,7 +3,9 @@ export const Benchmark = {
     const start = performance.now();
     const result = await fn();
     const end = performance.now();
-    console.log(`⏱️ [BENCHMARK] ${name}: ${(end - start).toFixed(2)} ms`);
+    const duration = end - start;
+    console.log(`⏱️ [BENCHMARK] ${name}: ${duration.toFixed(2)} ms`);
+    window.dispatchEvent(new CustomEvent('benchmark-log', { detail: { name, type: 'time', value: duration.toFixed(2) + ' ms' } }));
     return result;
   },
 
@@ -11,6 +13,7 @@ export const Benchmark = {
     const str = JSON.stringify(payload);
     const bytes = new Blob([str]).size;
     console.log(`📦 [BENCHMARK] Payload Size: ${bytes} bytes`);
+    window.dispatchEvent(new CustomEvent('benchmark-log', { detail: { name: 'Payload Size', type: 'size', value: bytes + ' bytes' } }));
     return bytes;
   },
 };

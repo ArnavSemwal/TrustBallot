@@ -7,6 +7,7 @@ import ReviewPage from './pages/ReviewPage';
 import SuccessPage from './pages/SuccessPage';
 import AdminDashboard from './pages/AdminDashboard';
 import { useKiosk } from './context/KioskContext';
+import BenchmarkOverlay from './components/BenchmarkOverlay';
 
 export default function App() {
   const { secondsLeft } = useKiosk();
@@ -67,6 +68,9 @@ export default function App() {
           Kiosk Offline (Queueing)
         </div>
       )}
+
+      {/* R11: Global Benchmark Harness Overlay */}
+      <BenchmarkOverlay />
     </>
   );
 }

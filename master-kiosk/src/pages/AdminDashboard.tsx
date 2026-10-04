@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { get } from 'idb-keyval';
 
 export default function AdminDashboard() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
   const [stream, setStream] = useState<string[]>([]);
   const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +66,46 @@ export default function AdminDashboard() {
     setDisputeInput('');
     setTimeout(() => setDisputeSuccess(false), 3000);
   };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TASK R17: Separate admin from voter app and secure it
+    // In production, this would use a proper auth token against the backend.
+    if (passwordInput === 'admin123') {
+      setIsLoggedIn(true);
+    } else {
+      setLoginError(true);
+      setTimeout(() => setLoginError(false), 2000);
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen w-full bg-[#000000] text-[#ededed] p-6 md:p-10 font-sans flex flex-col items-center justify-center">
+        <div className="max-w-sm w-full bg-[#111111] border border-[#222] p-8 rounded shadow-2xl">
+          <h2 className="text-xl font-medium tracking-tight mb-2">Restricted Access</h2>
+          <p className="text-[#888] text-xs mb-6">Enter ECI Administrator Credentials</p>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <input
+              type="password"
+              placeholder="Admin Password (admin123)"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              className="bg-transparent border border-[#333] text-[#ededed] rounded-sm px-4 py-2 text-sm w-full focus:border-[#666] outline-none transition-colors"
+              autoFocus
+            />
+            {loginError && <span className="text-red-500 text-xs">Invalid credentials.</span>}
+            <button
+              type="submit"
+              className="bg-[#ededed] text-black hover:bg-white rounded-sm px-4 py-2 text-sm font-medium transition-colors w-full"
+            >
+              Authenticate
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#000000] text-[#ededed] p-6 md:p-10 font-sans flex flex-col gap-8">
