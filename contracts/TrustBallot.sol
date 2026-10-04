@@ -56,7 +56,7 @@ contract TrustBallot {
         // 3. Verify ZKP (PLONK)
         uint256[3] memory pubSignals;
         pubSignals[0] = nullifier;
-        pubSignals[1] = 0; // root (in a full implementation, retrieve from state)
+        pubSignals[1] = 0x0ca55fb6a1f41355504f9d81d976049f897794972591943d5408f3f60644f024; // root (in a full implementation, retrieve from state)
         pubSignals[2] = electionId;
         
         if (!plonkVerifier.verifyProof(zkpProof, pubSignals)) {
