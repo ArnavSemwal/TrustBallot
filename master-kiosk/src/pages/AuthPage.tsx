@@ -237,11 +237,16 @@ export default function AuthPage() {
     }
 
     // TASK R3: Wire in verifyEpicSignature on a test payload
-    // We pass dummy values here to satisfy the signature check logic for the demo/review
-    const dummyPayload = { epic: epicNumber, sessionParams: 'dummy' };
-    const isValid = verifyEpicSignature(dummyPayload as any, 'dummy_signature');
+    const demoPayload = { epicHash: epicNumber, constituencyId: "C001" };
+    // We mock the signature fetching: TEST000000 has a valid signature. Any other EPIC gets an invalid mock signature.
+    const signature = epicNumber === 'TEST000000'
+      ? '0xb1934e21d95bcf8daa0f1972f7ec38a3d2897afa7c3b36ee41c7f7973cdcd47f10b6553e3b9bca981eda10bc8aac6d892c398499790d2220a57dcce176c55ec11b'
+      : '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
+      
+    const isValid = verifyEpicSignature(demoPayload as any, signature);
     if (!isValid) {
-      console.warn('EPIC Signature verification returned false, but allowing for demo.');
+      alert(selectedLanguage === 'hi' ? 'अवैध एपिक हस्ताक्षर (ECI)!' : 'Invalid EPIC Signature (ECI)!');
+      return;
     }
 
     setVoterVerified(epicNumber);

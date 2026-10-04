@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "ethers": "^6.17.0",
     "html5-qrcode": "^2.3.8",
     "idb-keyval": "^6.3.0",
     "lucide-react": "^1.39.0",
