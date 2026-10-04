@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import LanguagePage from './pages/LanguagePage';
 import AuthPage from './pages/AuthPage';
 import BallotPage from './pages/BallotPage';
@@ -9,6 +10,18 @@ import { useKiosk } from './context/KioskContext';
 
 export default function App() {
   const { secondsLeft } = useKiosk();
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   if (secondsLeft <= 0) {
     return (
@@ -42,6 +55,14 @@ export default function App() {
           <span className="font-semibold text-sm uppercase tracking-wider">
             Inactivity Detected — Resetting in {secondsLeft}s
           </span>
+        </div>
+      )}
+
+      {/* Global Offline Indicator for Poll Workers */}
+      {isOffline && (
+        <div className="fixed top-4 right-4 bg-orange-100 border border-orange-300 text-orange-800 px-3 py-1.5 rounded-md shadow-md flex items-center gap-2 select-none pointer-events-none z-[100] opacity-80 text-[10px] font-bold uppercase tracking-widest transition-opacity hover:opacity-10">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          Kiosk Offline (Queueing)
         </div>
       )}
     </>
