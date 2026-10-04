@@ -170,24 +170,21 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const submitVote = async () => {
     return new Promise<void>((resolve, reject) => {
       setTimeout(() => {
-        if (Math.random() < 0.2) {
-          reject(new Error('NULLIFIER_COLLISION'));
+        // TASK R6: Remove fake 20% rejection rate
+        // TASK R2: Temporary leak flag `isDecoy` so backend drops fake votes
+        const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000, isDecoy: true };
+        const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000, isDecoy: true };
+        
+        if (duressMode) {
+          // Under duress, silently spoil the real vote by adding a 3rd decoy instead.
+          const decoy3 = { voterId: '5544332211', candidateId: 'c12', timestamp: Date.now() - 500, isDecoy: true };
+          setVotePool((prev) => [...prev, decoy3, decoy1, decoy2]);
         } else {
-          // TASK R2: Temporary leak flag `isDecoy` so backend drops fake votes
-          const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000, isDecoy: true };
-          const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000, isDecoy: true };
-          
-          if (duressMode) {
-            // Under duress, silently spoil the real vote by adding a 3rd decoy instead.
-            const decoy3 = { voterId: '5544332211', candidateId: 'c12', timestamp: Date.now() - 500, isDecoy: true };
-            setVotePool((prev) => [...prev, decoy3, decoy1, decoy2]);
-          } else {
-            // Normal flow
-            const realPayload = { voterId, candidateId: selectedCandidate?.id, timestamp: Date.now() };
-            setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
-          }
-          resolve();
+          // Normal flow
+          const realPayload = { voterId, candidateId: selectedCandidate?.id, timestamp: Date.now() };
+          setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
         }
+        resolve();
       }, 800);
     });
   };
