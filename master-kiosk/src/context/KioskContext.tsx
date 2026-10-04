@@ -115,8 +115,14 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     // If we have nothing to flush, abort
     if (votePool.length === 0) return;
     
-    // Make a copy of the pool and clear the state
-    const poolToFlush = [...votePool].sort(() => Math.random() - 0.5);
+    // TASK R4: Cryptographically secure Fisher-Yates shuffle
+    const poolToFlush = [...votePool];
+    for (let i = poolToFlush.length - 1; i > 0; i--) {
+      const randomBuffer = new Uint32Array(1);
+      crypto.getRandomValues(randomBuffer);
+      const j = randomBuffer[0] % (i + 1);
+      [poolToFlush[i], poolToFlush[j]] = [poolToFlush[j], poolToFlush[i]];
+    }
     setVotePool([]);
     
     console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', poolToFlush);
@@ -125,7 +131,8 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const voteInt = parseInt(candidateStr.replace(/[^0-9]/g, '')) || 0;
       
       try {
-        await fetch('http://localhost:8001/add_vote', {
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
+        await fetch(`${BACKEND_URL}/add_vote`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // TASK R2: Pass isDecoy to the backend

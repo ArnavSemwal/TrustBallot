@@ -17,7 +17,8 @@ export default function AdminDashboard() {
 
     const fetchTransactions = async () => {
       try {
-        const response = await fetch('http://localhost:8001/transactions');
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
+        const response = await fetch(`${BACKEND_URL}/transactions`);
         const data = await response.json();
         if (data && data.transactions) {
           setStream([startupLog, syncLog, ...data.transactions]);
