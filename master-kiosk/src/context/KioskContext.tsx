@@ -75,6 +75,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Expose duressMode in resetSession
   const resetSession = useCallback(() => {

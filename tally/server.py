@@ -93,7 +93,7 @@ class TallyServer(BaseHTTPRequestHandler):
             self._send_response({"status": "error", "msg": "Not found"}, 404)
 
 if __name__ == '__main__':
-    server_address = ('', 8000)
+    server_address = ('', 8001)
     httpd = HTTPServer(server_address, TallyServer)
-    logging.info("Starting Tally Node on port 8000...")
+    logging.info("Starting Tally Node on port 8001...")
     httpd.serve_forever()
