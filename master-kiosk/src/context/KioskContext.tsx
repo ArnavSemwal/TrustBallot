@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { get, set } from 'idb-keyval';
+import { Benchmark } from '../utils/benchmark';
 
 export type Language = 'en' | 'hi';
 
@@ -148,15 +149,19 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
-        const response = await fetch(`${BACKEND_URL}/add_vote`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // TASK R2: Pass isDecoy to the backend
-          body: JSON.stringify({ 
-            vote: voteInt,
-            isDecoy: (payload as any).isDecoy || false 
+        const payloadObj = { 
+          vote: voteInt,
+          isDecoy: (payload as any).isDecoy || false 
+        };
+        Benchmark.calculatePayloadSize(payloadObj);
+
+        const response = await Benchmark.measureTime('Network Latency (add_vote)', () => 
+          fetch(`${BACKEND_URL}/add_vote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadObj)
           })
-        });
+        );
         
         // TASK R8: Only remove from pool if the request actually succeeds
         if (response.ok) {
@@ -194,7 +199,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   }, [votePool, flushPool]);
 
   const submitVote = async () => {
-    return new Promise<void>((resolve, reject) => {
+    return Benchmark.measureTime('Local Vote Processing & Encryption', () => new Promise<void>((resolve, reject) => {
       setTimeout(() => {
         // TASK R6: Remove fake 20% rejection rate
         // TASK R2: Temporary leak flag `isDecoy` so backend drops fake votes
@@ -212,7 +217,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         }
         resolve();
       }, 800);
-    });
+    }));
   };
 
   return (
