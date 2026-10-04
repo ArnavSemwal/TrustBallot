@@ -4,37 +4,76 @@ const app = express();
 
 app.use(express.json());
 
-// List of all node ports in our simulated BFT network
-const ALL_NODES = [3001, 3002, 3003, 3004];
+// Task B1: Use environment variables instead of hardcoded values
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = process.env.DATA_FILE || 'votes.json';
+const PEERS = process.env.PEERS ? process.env.PEERS.split(',') : [];
 
-app.post('/receive-vote', async (req, res) => {
-    const voteData = req.body;
-    const currentPort = process.env.PORT || 3001;
+// Task B3: Exact hash set to stop double voting
+const seenNullifiers = new Set();
 
-    console.log(`[Node ${currentPort}] Received vote:`, voteData);
+// Create the data file if it doesn't exist yet
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+}
 
-    // Simple BFT Simulation: Count this node's vote + simulate peer validation
-    let acknowledgements = 1; 
+// Endpoint for nodes to acknowledge a peer's vote
+app.post('/consensus', (req, res) => {
+    const vote = req.body;
+    if (seenNullifiers.has(vote.nullifier)) {
+        console.log(`[Node ${PORT}] Rejecting consensus: Nullifier ${vote.nullifier} already seen.`);
+        return res.status(400).json({ error: "Nullifier already seen by this node." });
+    }
+    seenNullifiers.add(vote.nullifier);
+    res.status(200).send("Acknowledged");
+});
 
-    // In a full loop, it would ping peers; for our quick demo, we simulate 
-    // that if at least 3 out of 4 nodes are alive, consensus is reached.
-    if (acknowledgements >= 1) {
-        // Read existing votes
-        const fileData = fs.readFileSync('votes.json', 'utf8');
-        const votes = JSON.parse(fileData);
+// Endpoint for the kiosk to submit a vote
+app.post('/add_vote', async (req, res) => {
+    const vote = req.body;
 
-        // Save vote with consensus status
-        votes.push({ ...voteData, status: "Consensus Reached", verified_by_node: currentPort });
-        fs.writeFileSync('votes.json', JSON.stringify(votes, null, 2));
+    // 1. Check for Double Voting
+    if (seenNullifiers.has(vote.nullifier)) {
+        console.log(`[Node ${PORT}] Rejected duplicate nullifier: ${vote.nullifier}`);
+        return res.status(400).json({ error: "Double vote detected. Nullifier rejected." });
+    }
+    
+    // Temporarily add it to the set while checking consensus
+    seenNullifiers.add(vote.nullifier);
 
-        console.log(`[Node ${currentPort}] Consensus achieved! Vote stored.`);
-        return res.send({ status: "Success", message: "Consensus reached and vote recorded." });
+    // 2. Task B2: 3-of-4 Peer Consensus
+    let acknowledgements = 1; // The node counts itself
+    
+    console.log(`[Node ${PORT}] Asking peers for consensus...`);
+    const peerRequests = PEERS.map(peerUrl => 
+        fetch(`${peerUrl}/consensus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(vote)
+        })
+        .then(response => response.ok ? 1 : 0)
+        .catch(err => 0) // Treat unreachable nodes as 0
+    );
+
+    // Wait for all peers to reply
+    const results = await Promise.all(peerRequests);
+    acknowledgements += results.reduce((sum, count) => sum + count, 0);
+
+    // 3. Finalize the vote only if 3 out of 4 agree
+    if (acknowledgements >= 3) {
+        console.log(`[Node ${PORT}] Consensus reached (${acknowledgements}/4). Saving vote.`);
+        const currentVotes = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        currentVotes.push(vote);
+        fs.writeFileSync(DATA_FILE, JSON.stringify(currentVotes, null, 2));
+        
+        return res.status(200).json({ message: "Vote finalized with 3-of-4 consensus." });
     } else {
-        return res.status(500).send({ status: "Error", message: "Consensus failed." });
+        console.log(`[Node ${PORT}] Consensus failed (${acknowledgements}/4).`);
+        seenNullifiers.delete(vote.nullifier); // Rollback
+        return res.status(500).json({ error: "Consensus failed. Vote not finalized." });
     }
 });
 
-const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`BFT Node running on http://localhost:${PORT}`);
+    console.log(`BFT Node running on port ${PORT}, writing to ${DATA_FILE}`);
 });
