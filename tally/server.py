@@ -44,6 +44,13 @@ class TallyServer(BaseHTTPRequestHandler):
         req = json.loads(post_data.decode('utf-8'))
 
         if self.path == '/add_vote':
+            # TASK R2: Temporary decoy leak to prevent corrupting the tally
+            is_decoy = req.get("isDecoy", False)
+            if is_decoy:
+                logging.info("Received decoy vote. Dropping from tally.")
+                self._send_response({"status": "success", "msg": "Vote added (decoy ignored)"})
+                return
+
             vote_index = req.get("vote", 0)
             
             # Convert candidate index to a one-hot encoded array for 12 candidates

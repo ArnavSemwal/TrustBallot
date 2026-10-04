@@ -128,7 +128,11 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         await fetch('http://localhost:8001/add_vote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vote: voteInt })
+          // TASK R2: Pass isDecoy to the backend
+          body: JSON.stringify({ 
+            vote: voteInt,
+            isDecoy: (payload as any).isDecoy || false 
+          })
         });
       } catch (e) {
         console.error("Failed to send payload to blockchain:", e);
@@ -162,12 +166,13 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         if (Math.random() < 0.2) {
           reject(new Error('NULLIFIER_COLLISION'));
         } else {
-          const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000 };
-          const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000 };
+          // TASK R2: Temporary leak flag `isDecoy` so backend drops fake votes
+          const decoy1 = { voterId: '9876543210', candidateId: 'c1', timestamp: Date.now() - 1000, isDecoy: true };
+          const decoy2 = { voterId: '1122334455', candidateId: 'c5', timestamp: Date.now() - 2000, isDecoy: true };
           
           if (duressMode) {
             // Under duress, silently spoil the real vote by adding a 3rd decoy instead.
-            const decoy3 = { voterId: '5544332211', candidateId: 'c12', timestamp: Date.now() - 500 };
+            const decoy3 = { voterId: '5544332211', candidateId: 'c12', timestamp: Date.now() - 500, isDecoy: true };
             setVotePool((prev) => [...prev, decoy3, decoy1, decoy2]);
           } else {
             // Normal flow
