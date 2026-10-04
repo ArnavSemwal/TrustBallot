@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 
 > **Repository**: [https://github.com/TrustBallot-Team/TrustBallot](https://github.com/TrustBallot-Team/TrustBallot)  
-> **Academic / Prototype Cycle**: MVP  
+> **Academic / Prototype Cycle**: Phase 1 Complete (Transitioning to Phase 2 per PRD v3)  
 > **Target Problem**: Enabling secure remote voting for India's ~300M domestic migrant voters.
 > **Team**: Anushka (Blockchain/Crypto), Shashwat (Backend/Infra), Arnav (Frontend/UX)
 
@@ -188,7 +188,7 @@ Navigate to `http://localhost:5173/` in your browser to start voting!
 
 1. **Standard Voting Flow**:
    - Navigate to `/`. Choose **English** or **Hindi**.
-   - Enter any 10-digit EPIC number (e.g., `1234567890`) $\rightarrow$ Click **Verify & Proceed**.
+   - Enter any 10-digit EPIC number (e.g., `1234567890`) or use the upcoming **QR Scanner** $\rightarrow$ Click **Verify & Proceed**.
    - On the webcam screen, click **Demo: Force Pass**.
    - Enter standard PIN `1234` $\rightarrow$ Click **Confirm Identity**.
    - Browse candidate pages using the pagination buttons $\rightarrow$ Select a candidate $\rightarrow$ Click **Vote**.
