@@ -238,9 +238,9 @@ export default function AuthPage() {
 
     // TASK R3: Wire in verifyEpicSignature on a test payload
     const demoPayload = { epicHash: epicNumber, constituencyId: "C001" };
-    // We mock the signature fetching: TEST000000 has a valid signature. Any other EPIC gets an invalid mock signature.
-    const signature = epicNumber === 'TEST000000'
-      ? '0xb1934e21d95bcf8daa0f1972f7ec38a3d2897afa7c3b36ee41c7f7973cdcd47f10b6553e3b9bca981eda10bc8aac6d892c398499790d2220a57dcce176c55ec11b'
+    // We mock the signature fetching: 1234567890 has a valid signature. Any other EPIC gets an invalid mock signature.
+    const signature = epicNumber === '1234567890'
+      ? '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b'
       : '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
       
     const isValid = verifyEpicSignature(demoPayload as any, signature);
