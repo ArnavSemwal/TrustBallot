@@ -12,3 +12,6 @@ circuits/main.r1cs
 circuits/main.sym
 artifacts/
 cache/
+circuits/circuit_final.zkey
+circuits/verification_key.json
+circuits/ptau/
