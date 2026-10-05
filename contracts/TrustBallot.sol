@@ -12,25 +12,38 @@ contract TrustBallot {
     KioskRegistry public kioskRegistry;
     PlonkVerifier public plonkVerifier;
     
+    enum ElectionState { None, Created, Open, Closed, Tallied }
+    mapping(uint256 => ElectionState) public electionStates;
+    
     // Mapping to track spent nullifiers per election
     mapping(uint256 => mapping(uint256 => bool)) public spentNullifiers;
+    // Mapping to store ciphertext hashes
+    mapping(uint256 => mapping(uint256 => bytes32)) public voteHashes;
     
-    event VoteAccepted(uint256 indexed electionId, uint256 nullifier);
+    address public admin;
+
+    event ElectionStateChanged(uint256 indexed electionId, ElectionState state);
+    event VoteAccepted(uint256 indexed electionId, uint256 nullifier, bytes32 ciphertextHash);
     event VoteRejected(uint256 indexed electionId, string reason);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin");
+        _;
+    }
 
     constructor(address _kioskRegistryAddress, address _plonkVerifierAddress) {
         kioskRegistry = KioskRegistry(_kioskRegistryAddress);
         plonkVerifier = PlonkVerifier(_plonkVerifierAddress);
+        admin = msg.sender;
+    }
+
+    function setElectionState(uint256 electionId, ElectionState state) external onlyAdmin {
+        electionStates[electionId] = state;
+        emit ElectionStateChanged(electionId, state);
     }
 
     /**
      * @dev Submit a vote payload.
-     * @param kioskId The ID of the kiosk submitting the vote.
-     * @param electionId The ID of the election.
-     * @param nullifier The ZKP-derived nullifier to prevent double voting.
-     * @param ciphertextVote The homomorphically encrypted vote payload.
-     * @param zkpProof The PLONK proof (mocked as bytes for MVP scaffold).
-     * @param dilithiumSignature The post-quantum signature (mocked as bytes for MVP).
      */
     function submitVote(
         string memory kioskId,
@@ -40,23 +53,38 @@ contract TrustBallot {
         uint256[24] calldata zkpProof,
         bytes memory dilithiumSignature
     ) external {
-        // 1. Verify Kiosk Registration
+        // 0. Check Election State
+        if (electionStates[electionId] != ElectionState.Open) {
+            emit VoteRejected(electionId, "election_not_open");
+            return;
+        }
+
+        // 1. Verify Kiosk Registration and Caller Binding
         if (!kioskRegistry.isKioskRegistered(kioskId)) {
             emit VoteRejected(electionId, "unregistered_kiosk");
             return;
         }
+        if (msg.sender != kioskRegistry.kioskAddresses(kioskId)) {
+            emit VoteRejected(electionId, "unauthorized_caller");
+            return;
+        }
 
-        // 2. Verify Dilithium Signature
-        // NOTE: Stubbed for MVP. Would integrate with an oracle or custom precompile.
+        // 2. Nullifier Check (Cheap check before ZKP)
+        if (spentNullifiers[electionId][nullifier]) {
+            emit VoteRejected(electionId, "duplicate_nullifier");
+            return;
+        }
+
+        // 3. Verify Dilithium Signature
         if (!verifyDilithium(dilithiumSignature, kioskId)) {
             emit VoteRejected(electionId, "invalid_signature");
             return;
         }
 
-        // 3. Verify ZKP (PLONK)
+        // 4. Verify ZKP (PLONK)
         uint256[3] memory pubSignals;
         pubSignals[0] = nullifier;
-        pubSignals[1] = 0x0ca55fb6a1f41355504f9d81d976049f897794972591943d5408f3f60644f024; // root (in a full implementation, retrieve from state)
+        pubSignals[1] = 0x0ca55fb6a1f41355504f9d81d976049f897794972591943d5408f3f60644f024; // root
         pubSignals[2] = electionId;
         
         if (!plonkVerifier.verifyProof(zkpProof, pubSignals)) {
@@ -64,17 +92,12 @@ contract TrustBallot {
             return;
         }
 
-        // 4. Nullifier Check
-        if (spentNullifiers[electionId][nullifier]) {
-            emit VoteRejected(electionId, "duplicate_nullifier");
-            return;
-        }
-
         // 5. Append to Ledger and mark nullifier as spent
         spentNullifiers[electionId][nullifier] = true;
-        // In a real implementation, ciphertextVote is appended to an event log or state array
+        bytes32 ciphertextHash = keccak256(ciphertextVote);
+        voteHashes[electionId][nullifier] = ciphertextHash;
         
-        emit VoteAccepted(electionId, nullifier);
+        emit VoteAccepted(electionId, nullifier, ciphertextHash);
     }
 
     // --- Stubbed verification functions for MVP ---

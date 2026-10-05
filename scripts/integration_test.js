@@ -36,18 +36,22 @@ async function main() {
 
   console.log("\n--- Testing Kiosk Registration ---");
   const kioskId = "kiosk-001";
-  const pubKey = "pub-key-001";
-  const messageHash = ethers.solidityPackedKeccak256(["string", "string"], [kioskId, pubKey]);
+  const kioskAddr = await eciAdmin.getAddress(); // Use eciAdmin as caller
+  const messageHash = ethers.solidityPackedKeccak256(["string", "address"], [kioskId, kioskAddr]);
   // Hardhat node signs messages correctly
   const signature = await eciAdmin.signMessage(ethers.getBytes(messageHash));
   
-  await kioskRegistry.connect(eciAdmin).registerKiosk(kioskId, pubKey, signature);
+  await kioskRegistry.connect(eciAdmin).registerKiosk(kioskId, kioskAddr, signature);
   const isReg = await kioskRegistry.isKioskRegistered(kioskId);
   if (!isReg) throw new Error("Kiosk should be registered");
   console.log("Kiosk registered successfully by ECI Admin.");
 
   console.log("\n--- Testing Vote Submission & ZKP Validation ---");
   const electionId = 1;
+  
+  // Set election to Open (2)
+  await trustBallot.connect(eciAdmin).setElectionState(electionId, 2);
+  console.log("Election state set to Open.");
   const nullifier = "0x0950acb7e532ebb21176a28dee52617a5a37ce9294aab1cf603024e5b9063f9a";
   const ciphertextVote = ethers.hexlify(ethers.randomBytes(32));
   const dilithiumSig = ethers.hexlify(ethers.randomBytes(64));

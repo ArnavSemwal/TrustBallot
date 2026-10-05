@@ -8,11 +8,12 @@ pragma solidity ^0.8.24;
 contract KioskRegistry {
     address public eciAdmin;
     
-    // Mapping from kiosk ID to its authorized public key
-    mapping(string => string) public kioskPubKeys;
+    // Mapping from kiosk ID to its authorized address
+    mapping(string => address) public kioskAddresses;
     mapping(string => bool) public isKioskRegistered;
 
-    event KioskRegistered(string kioskId, string pubKey);
+    event KioskRegistered(string kioskId, address kioskAddr);
+    event KioskRevoked(string kioskId);
 
     modifier onlyAdmin() {
         require(msg.sender == eciAdmin, "Only ECI Admin can perform this action");
@@ -26,19 +27,28 @@ contract KioskRegistry {
     /**
      * @dev Register a kiosk. In production, this would verify an ECI signature.
      * @param kioskId Unique identifier for the kiosk.
-     * @param pubKey The public key (or address) of the kiosk.
+     * @param kioskAddr The Ethereum address of the kiosk.
      * @param eciSignature The signature from the ECI authorizing this kiosk.
      */
-    function registerKiosk(string memory kioskId, string memory pubKey, bytes memory eciSignature) external onlyAdmin {
-        bytes32 messageHash = keccak256(abi.encodePacked(kioskId, pubKey));
+    function registerKiosk(string memory kioskId, address kioskAddr, bytes memory eciSignature) external onlyAdmin {
+        bytes32 messageHash = keccak256(abi.encodePacked(kioskId, kioskAddr));
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
         
         require(recoverSigner(ethSignedMessageHash, eciSignature) == eciAdmin, "Invalid ECI signature");
         
-        kioskPubKeys[kioskId] = pubKey;
+        kioskAddresses[kioskId] = kioskAddr;
         isKioskRegistered[kioskId] = true;
 
-        emit KioskRegistered(kioskId, pubKey);
+        emit KioskRegistered(kioskId, kioskAddr);
+    }
+
+    /**
+     * @dev Revoke a kiosk's registration.
+     */
+    function revokeKiosk(string memory kioskId) external onlyAdmin {
+        isKioskRegistered[kioskId] = false;
+        kioskAddresses[kioskId] = address(0);
+        emit KioskRevoked(kioskId);
     }
 
     function splitSignature(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
