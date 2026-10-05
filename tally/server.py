@@ -2,18 +2,31 @@ import json
 import logging
 import time
 import hashlib
+import os
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from tally import ThresholdTally, generate_keys, encrypt_vote, add_votes
 
 logging.basicConfig(level=logging.INFO)
-pub_key, priv_key = generate_keys()
+
+# C13: Use configured keys rather than generating random ones per container
+# In production, these should be securely injected via environment variables
+PUB_KEY_ENV = os.environ.get("TALLY_PUB_KEY")
+PRIV_KEY_ENV = os.environ.get("TALLY_PRIV_KEY")
+
+if PUB_KEY_ENV and PRIV_KEY_ENV:
+    pub_key = PUB_KEY_ENV
+    priv_key = PRIV_KEY_ENV
+else:
+    logging.warning("No keys found in environment. Generating temporary keys for dev.")
+    pub_key, priv_key = generate_keys()
 
 # In a real system, this state is synchronized across the chain
 running_tally = None
 tally_module = ThresholdTally(pub_key, priv_key, num_nodes=4, threshold=3)
 authorized_shares = []
 recent_transactions = []
+num_candidates = int(os.environ.get("NUM_CANDIDATES", 5)) # Configurable candidates
 
 class TallyServer(BaseHTTPRequestHandler):
     def _send_response(self, data, status=200):
@@ -53,11 +66,13 @@ class TallyServer(BaseHTTPRequestHandler):
 
             vote_index = req.get("vote", 0)
             
-            # Convert candidate index to a one-hot encoded array for 12 candidates
-            num_candidates = 12
+            # Convert candidate index to a one-hot encoded array
             vote_array = [0] * num_candidates
             if isinstance(vote_index, int) and 1 <= vote_index <= num_candidates:
                 vote_array[vote_index - 1] = 1
+            else:
+                self._send_response({"status": "error", "msg": "Invalid vote index out of range"}, 400)
+                return
                 
             encrypted_vote = encrypt_vote(pub_key, vote_array)
             if running_tally is None:
