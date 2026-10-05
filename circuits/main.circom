@@ -9,6 +9,7 @@ template TrustBallotMain(levels, numCandidates) {
     // Public Inputs
     signal input root;
     signal input electionId;
+    signal input ciphertextHash;
 
     // Private Inputs
     signal input privateCredential;
@@ -43,6 +44,9 @@ template TrustBallotMain(levels, numCandidates) {
     for (var i = 0; i < numCandidates; i++) {
         integrity.candidateSelection[i] <== candidateSelection[i];
     }
+    
+    // 4. Ciphertext Binding (Mock for now, using hash instead of ElGamal inside circuit)
+    signal ciphertextHashSq <== ciphertextHash * ciphertextHash;
 }
 
-component main {public [root, electionId]} = TrustBallotMain(20, 5);
+component main {public [root, electionId, ciphertextHash]} = TrustBallotMain(20, 5);
