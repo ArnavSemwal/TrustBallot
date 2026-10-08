@@ -42,6 +42,7 @@ interface KioskContextProps {
   votePool: any[];
   duressMode: boolean;
   setDuressMode: (val: boolean) => void;
+  trackerId: string | null;
 }
 
 const KioskContext = createContext<KioskContextProps | undefined>(undefined);
@@ -55,6 +56,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const [secondsLeft, setSecondsLeft] = useState(SESSION_TIMEOUT_SECONDS);
   const [votePool, setVotePool] = useState<any[]>([]);
   const [duressMode, setDuressMode] = useState(false);
+  const [trackerId, setTrackerId] = useState<string | null>(null);
 
   // TASK R8: Load vote pool from IndexedDB on startup
   useEffect(() => {
@@ -85,6 +87,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     setVoterId('');
     setSelectedCandidate(null);
     setDuressMode(false);
+    setTrackerId(null);
     navigate('/', { replace: true });
   }, [navigate]);
 
@@ -257,11 +260,19 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         const payloadHash = `${voterId}_1_${cipherBase64.substring(0, 10)}`;
         const signature = await signPayloadDilithium(payloadHash);
 
+        // 4. Generate Tracker ID (Receipt)
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cipherBase64));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const generatedTracker = `TRK-${hashHex.substring(0, 10).toUpperCase()}`;
+        setTrackerId(generatedTracker);
+
         const realPayload = {
           voterId,
           ciphertext: cipherBase64,
           zkp,
           signature,
+          trackerId: generatedTracker,
           timestamp: Date.now(),
         };
 
@@ -322,6 +333,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         votePool,
         duressMode,
         setDuressMode,
+        trackerId,
       }}
     >
       {children}
