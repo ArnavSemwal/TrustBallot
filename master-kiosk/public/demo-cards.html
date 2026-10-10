@@ -1,238 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TrustBallot — Official QR Testing & Verification Center</title>
+  <title>TrustBallot Demo Voter Cards</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
-    :root {
-      --bg: #0D233A;
-      --card-bg: #15324F;
-      --teal: #028090;
-      --accent: #F4A261;
-      --text: #F9F9FB;
-      --text-muted: #94A3B8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 2rem 1rem; min-height: 100vh; }
-    .container { max-width: 1000px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 2.5rem; }
-    h1 { font-size: 2.2rem; color: #fff; margin-bottom: 0.5rem; letter-spacing: -0.5px; }
-    .subtitle { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
-    
-    .card {
-      background: var(--card-bg);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      position: relative;
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 1rem;
-    }
-    .badge-teal { background: rgba(2, 128, 144, 0.2); color: #4dd0e1; border: 1px solid #028090; }
-    .badge-orange { background: rgba(244, 162, 97, 0.2); color: #F4A261; border: 1px solid #F4A261; }
-    .badge-green { background: rgba(46, 125, 50, 0.2); color: #81c784; border: 1px solid #2e7d32; }
-
-    .qr-box {
-      background: #ffffff;
-      padding: 1rem;
-      border-radius: 0.75rem;
-      margin: 1rem 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    canvas { max-width: 100%; height: auto; }
-
-    .code-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .code-value { font-family: monospace; font-size: 1.4rem; font-weight: bold; color: #fff; margin: 0.25rem 0 1rem; letter-spacing: 1px; }
-
-    .instructions {
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      line-height: 1.4;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      width: 100%;
-      text-align: left;
-    }
-    .instructions strong { color: #fff; }
-
-    .action-btn {
-      background: var(--teal);
-      color: white;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin-top: 1rem;
-      transition: background 0.2s;
-    }
-    .action-btn:hover { background: #026d7d; }
-    
-    .nav-links {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-    .nav-link {
-      color: #4dd0e1;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      padding: 0.5rem 1rem;
-      border: 1px solid #4dd0e1;
-      border-radius: 0.5rem;
-      transition: all 0.2s;
-    }
-    .nav-link:hover { background: #4dd0e1; color: var(--bg); }
-
-    .section-title {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    body { font-family: Arial, sans-serif; display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; padding: 50px; background: #f0f4f8; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    .card h2 { margin-bottom: 5px; color: #028090; font-size: 24px; }
+    .card p { color: #666; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
+    canvas { border: 4px solid #0D233A; border-radius: 8px; width: 250px !important; height: 250px !important; }
+    .instructions { width: 100%; text-align: center; margin-bottom: 40px; color: #0D233A; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>TrustBallot QR Verification Center</h1>
-      <p class="subtitle">Use these live QR codes to test Voter Authentication with your webcam and verify Sealed Vote Receipts.</p>
-      <div class="nav-links">
-        <a href="/" class="nav-link" target="_blank">Open Voting Kiosk</a>
-        <a href="/audit" class="nav-link" target="_blank">Open Admin / Audit Dashboard</a>
-      </div>
-    </header>
 
-    <!-- SECTION 1: VOTER SIGN-IN -->
-    <div class="section-title">
-      <span>1. Voter Identity Sign-In QR Code</span>
-      <span class="badge badge-teal">Camera Scanner Ready</span>
-    </div>
-    
-    <div class="grid">
-      <!-- Card 1: Official Demo Voter -->
-      <div class="card">
-        <span class="badge badge-green">Valid Voter (Pass)</span>
-        <div class="qr-box">
-          <canvas id="qr-voter-valid"></canvas>
-        </div>
-        <div class="code-label">EPIC / Voter ID Number</div>
-        <div class="code-value">1234567890</div>
-        <div class="instructions">
-          • <strong>Action:</strong> Hold this QR code up to your webcam on the Kiosk Sign-In page (<a href="/auth" target="_blank" style="color: #4dd0e1;">/auth</a>).<br>
-          • <strong>Face Check:</strong> Click <em>Demo: Force Pass</em>.<br>
-          • <strong>PIN:</strong> Enter <strong>1234</strong> to proceed to ballot.
-        </div>
-      </div>
+<div class="instructions">
+  <h1>TrustBallot Team QR Cards</h1>
+  <p>Scan these directly from your phone screen into the Kiosk webcam!</p>
+  <p>They contain cryptographically signed JSON payloads from the ECI private key.</p>
+</div>
 
-      <!-- Card 2: Duress Voter -->
-      <div class="card">
-        <span class="badge badge-orange">Duress Voter (Panic PIN)</span>
-        <div class="qr-box">
-          <canvas id="qr-voter-duress"></canvas>
-        </div>
-        <div class="code-label">EPIC Number + Duress PIN</div>
-        <div class="code-value">1234567890 (PIN: 9999)</div>
-        <div class="instructions">
-          • <strong>Action:</strong> Scan this code at the kiosk.<br>
-          • <strong>PIN:</strong> Enter <strong>9999</strong>.<br>
-          • <strong>Behavior:</strong> The ballot loads normally to protect voter safety, but silently routes a decoy vote and triggers backend panic telemetry.
-        </div>
-      </div>
-    </div>
+<div class="card">
+  <h2>Arnav</h2>
+  <p>EPIC: ARNAV00001</p>
+  <canvas id="qr1"></canvas>
+</div>
 
-    <!-- SECTION 2: VOTE SEALING TRACKER RECEIPT -->
-    <div class="section-title">
-      <span>2. Sealed Vote Audit Receipts (Tracker QRs)</span>
-      <button class="action-btn" onclick="generateRandomReceipts()">+ Generate 3 New Sealed Vote QRs</button>
-    </div>
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-      When you complete a vote on the kiosk, it generates a real cryptographic Tracker ID (SHA-256 hash of the SEAL ciphertext) on the confirmation screen. Here are live sample sealed receipts you can inspect:
-    </p>
+<div class="card">
+  <h2>Anushka</h2>
+  <p>EPIC: ANUSHKA002</p>
+  <canvas id="qr2"></canvas>
+</div>
 
-    <div class="grid" id="receipts-container">
-      <!-- Dynamically filled receipts -->
-    </div>
-  </div>
+<div class="card">
+  <h2>Shashwat</h2>
+  <p>EPIC: SHASHWAT03</p>
+  <canvas id="qr3"></canvas>
+</div>
 
-  <script>
-    // 1. Render Voter Sign-In QRs
-    QRCode.toCanvas(document.getElementById('qr-voter-valid'), '1234567890', { width: 200, margin: 1 });
-    QRCode.toCanvas(document.getElementById('qr-voter-duress'), '1234567890', { width: 200, margin: 1 });
+<script>
+  const arnavPayload = JSON.stringify({
+    epicHash: "ARNAV00001",
+    sig: "0x8b51352cdaf07fb8e56ef9015c49b5e45f67600c242440d775df9be074ad738517e6f1dc5791ce8a8e72e3d99d797824715b954a83ee9f0998a9f779f537c99c1c"
+  });
+  
+  const anushkaPayload = JSON.stringify({
+    epicHash: "ANUSHKA002",
+    sig: "0xd0c8f2c807c82c7e05297191479aaa1f2e8d1183d7477154b12a271052f2b78a4c41e12a7506767e1d80c64ed267694d546a244570469babb9fbf96b6363e6821b"
+  });
+  
+  const shashwatPayload = JSON.stringify({
+    epicHash: "SHASHWAT03",
+    sig: "0x22b7db03e87803071b43b4248c6405667bc62602d100fbc5ae268c879518aa57461e71afab4cb576390ef8dfb84b761c947e1748a7c98b9b115250beaacea5361b"
+  });
 
-    // 2. Generate Sample Sealed Vote Receipts
-    const sampleIds = ['TRK-8F31E09A12', 'TRK-4D90B22C78', 'TRK-C127A9FE55'];
-
-    function createReceiptCard(trackerId, index) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      const canvasId = 'qr-receipt-' + index + '-' + Math.floor(Math.random() * 1000);
-      
-      card.innerHTML = `
-        <span class="badge badge-teal">Cryptographically Sealed</span>
-        <div class="qr-box">
-          <canvas id="${canvasId}"></canvas>
-        </div>
-        <div class="code-label">Tracker ID (Hash of Ciphertext)</div>
-        <div class="code-value" style="color: #4dd0e1;">${trackerId}</div>
-        <div class="instructions">
-          • <strong>Receipt-Free:</strong> Does <em>not</em> disclose the candidate voted for.<br>
-          • <strong>Auditable:</strong> Can be verified against the BFT node ledger on <a href="/audit" target="_blank" style="color: #4dd0e1;">/audit</a>.<br>
-          • <strong>Integrity:</strong> Mathematically binds to the sealed SEAL ciphertext.
-        </div>
-      `;
-      
-      setTimeout(() => {
-        QRCode.toCanvas(document.getElementById(canvasId), trackerId, { width: 190, margin: 1 });
-      }, 50);
-
-      return card;
-    }
-
-    function generateRandomReceipts() {
-      const container = document.getElementById('receipts-container');
-      container.innerHTML = '';
-      
-      for (let i = 0; i < 3; i++) {
-        const hex = Array.from(crypto.getRandomValues(new Uint8Array(5)))
-          .map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-        const trackerId = 'TRK-' + hex;
-        container.appendChild(createReceiptCard(trackerId, i));
-      }
-    }
-
-    // Initial render of receipts
-    const container = document.getElementById('receipts-container');
-    sampleIds.forEach((id, idx) => {
-      container.appendChild(createReceiptCard(id, idx));
-    });
-  </script>
+  QRCode.toCanvas(document.getElementById('qr1'), arnavPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+  QRCode.toCanvas(document.getElementById('qr2'), anushkaPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+  QRCode.toCanvas(document.getElementById('qr3'), shashwatPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+</script>
 </body>
 </html>
