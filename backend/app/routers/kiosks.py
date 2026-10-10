@@ -9,6 +9,7 @@ from ..config import SESSION_SECRET
 from ..store import register_kiosk, get_kiosk, kiosk_registry
 from ..logging_config import logger
 
+
 router = APIRouter(prefix="/api/kiosks", tags=["kiosks"])
 
 def sign_session_token(kiosk_id: str) -> str:
