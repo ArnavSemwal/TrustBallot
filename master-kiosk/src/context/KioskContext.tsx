@@ -302,7 +302,8 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
             timestamp: Date.now() - 500,
             isDecoy: true,
           };
-          setVotePool((prev) => [...prev, decoy3, decoy1, decoy2]);
+          // TASK R13: Kiosk duress implementation: queued real vote
+          setVotePool((prev) => [...prev, realPayload, decoy3, decoy1, decoy2]);
         } else {
           setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
         }
