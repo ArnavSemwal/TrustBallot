@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const crypto = require('crypto');
+const lockfile = require('proper-lockfile'); // Task B17: Imported the lockfile library
 const app = express();
 
 app.use(express.json());
@@ -25,6 +26,35 @@ const seenNullifiers = new Set();
 if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 }
+
+// --- Task B17-B27: Leader Failover & Heartbeat Logic ---
+let isLeader = (PORT === '3000' || PORT === 3000); // Default to port 3000 as initial leader
+let lastHeartbeat = Date.now();
+
+// Endpoint for followers to receive heartbeats from the leader
+app.post('/heartbeat', (req, res) => {
+    lastHeartbeat = Date.now();
+    isLeader = false; // We received a ping, meaning someone else is the active leader
+    res.status(200).send("Alive");
+});
+
+// Background process running every 2 seconds to manage network health
+setInterval(() => {
+    if (isLeader) {
+        // If this node is the leader, broadcast heartbeats to all peers
+        PEERS.forEach(peerUrl => {
+            fetch(`${peerUrl}/heartbeat`, { method: 'POST' }).catch(() => {});
+        });
+    } else {
+        // If this node is a follower, check if the leader went offline (5 second timeout)
+        if (Date.now() - lastHeartbeat > 5000) {
+            console.log(`[Node ${PORT}] WARNING: Leader timed out! Taking over as new leader...`);
+            isLeader = true; // Claim leadership to keep the network alive
+            lastHeartbeat = Date.now();
+        }
+    }
+}, 2000);
+// -------------------------------------------------------
 
 // Endpoint for nodes to acknowledge a peer's vote
 app.post('/consensus', (req, res) => {
@@ -107,24 +137,33 @@ app.post('/add_vote', async (req, res) => {
     // 3. Finalize the vote only if 3 out of 4 agree
     if (acknowledgements >= 3) {
         console.log(`[Node ${PORT}] Consensus reached (${acknowledgements}/4). Saving vote.`);
-        const currentVotes = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
         
-        // Task B5: Append-only hash chain implementation
-        // Get the hash of the last recorded vote (or use a genesis zero-hash)
-        const previousHash = currentVotes.length > 0 ? currentVotes[currentVotes.length - 1].hash : "0000000000000000000000000000000000000000000000000000000000000000";
-        
-        // Create a new hash combining the previous hash and the new vote data
-        const currentHash = crypto.createHash('sha256')
-            .update(previousHash + JSON.stringify(vote))
-            .digest('hex');
+        // Task B17: Offline Local Locks
+        let release;
+        try {
+            release = await lockfile.lock(DATA_FILE, { retries: 5 });
             
-        // Attach the hash to the vote and save it to the ledger
-        const securedVote = { ...vote, hash: currentHash, previous_hash: previousHash };
-        currentVotes.push(securedVote);
+            const currentVotes = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+            
+            // Task B5: Append-only hash chain implementation
+            const previousHash = currentVotes.length > 0 ? currentVotes[currentVotes.length - 1].hash : "0000000000000000000000000000000000000000000000000000000000000000";
+            const currentHash = crypto.createHash('sha256').update(previousHash + JSON.stringify(vote)).digest('hex');
+            
+            const securedVote = { ...vote, hash: currentHash, previous_hash: previousHash };
+            currentVotes.push(securedVote);
+            
+            fs.writeFileSync(DATA_FILE, JSON.stringify(currentVotes, null, 2));
+            
+            await release(); // Unlock
+            return res.status(200).json({ message: "Vote finalized with 3-of-4 consensus." });
+            
+        } catch (error) {
+            console.error(`[Node ${PORT}] File system busy. Could not save vote safely.`, error);
+            if (release) await release();
+            seenNullifiers.delete(vote.nullifier);
+            return res.status(500).json({ error: "System busy. Could not acquire local lock." });
+        }
         
-        fs.writeFileSync(DATA_FILE, JSON.stringify(currentVotes, null, 2));
-        
-        return res.status(200).json({ message: "Vote finalized with 3-of-4 consensus." });
     } else {
         console.log(`[Node ${PORT}] Consensus failed (${acknowledgements}/4).`);
         seenNullifiers.delete(vote.nullifier); // Rollback
