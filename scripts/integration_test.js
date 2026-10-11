@@ -29,7 +29,7 @@ async function main() {
   console.log("PlonkVerifier deployed:", plonkVerifierAddr);
 
   // 3. Deploy TrustBallot
-  const TrustBallotFactory = new ethers.ContractFactory(TrustBallotArt.abi, TrustBallotArt.bytecode, signer);
+  const TrustBallotFactory = new ethers.ContractFactory(TrustBallotArt.abi, TrustBallotArt.bytecode, eciAdmin);
   const trustBallot = await TrustBallotFactory.deploy(kioskRegistryAddr, plonkVerifierAddr);
   await trustBallot.waitForDeployment();
   console.log("TrustBallot deployed:", await trustBallot.getAddress());
@@ -48,10 +48,12 @@ async function main() {
 
   console.log("\n--- Testing Vote Submission & ZKP Validation ---");
   const electionId = 1;
+  const merkleRoot = "0x0ca55fb6a1f41355504f9d81d976049f897794972591943d5408f3f60644f024";
   
-  // Set election to Open (2)
+  // Set election Merkle root and open state
+  await trustBallot.connect(eciAdmin).setElectionRoot(electionId, merkleRoot);
   await trustBallot.connect(eciAdmin).setElectionState(electionId, 2);
-  console.log("Election state set to Open.");
+  console.log("Election root set and state opened.");
   const nullifier = "0x0950acb7e532ebb21176a28dee52617a5a37ce9294aab1cf603024e5b9063f9a";
   const ciphertextVote = ethers.hexlify(ethers.randomBytes(32));
   const dilithiumSig = ethers.hexlify(ethers.randomBytes(64));

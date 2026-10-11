@@ -19,10 +19,13 @@ contract TrustBallot {
     mapping(uint256 => mapping(uint256 => bool)) public spentNullifiers;
     // Mapping to store ciphertext hashes
     mapping(uint256 => mapping(uint256 => bytes32)) public voteHashes;
+    // Mapping to store Merkle roots per election
+    mapping(uint256 => uint256) public electionRoots;
     
     address public admin;
 
     event ElectionStateChanged(uint256 indexed electionId, ElectionState state);
+    event ElectionRootSet(uint256 indexed electionId, uint256 root);
     event VoteAccepted(uint256 indexed electionId, uint256 nullifier, bytes32 ciphertextHash);
     event VoteRejected(uint256 indexed electionId, string reason);
 
@@ -40,6 +43,11 @@ contract TrustBallot {
     function setElectionState(uint256 electionId, ElectionState state) external onlyAdmin {
         electionStates[electionId] = state;
         emit ElectionStateChanged(electionId, state);
+    }
+
+    function setElectionRoot(uint256 electionId, uint256 root) external onlyAdmin {
+        electionRoots[electionId] = root;
+        emit ElectionRootSet(electionId, root);
     }
 
     /**
@@ -82,9 +90,15 @@ contract TrustBallot {
         }
 
         // 4. Verify ZKP (PLONK)
+        uint256 root = electionRoots[electionId];
+        if (root == 0) {
+            emit VoteRejected(electionId, "merkle_root_not_set");
+            return;
+        }
+
         uint256[3] memory pubSignals;
         pubSignals[0] = nullifier;
-        pubSignals[1] = 0x0ca55fb6a1f41355504f9d81d976049f897794972591943d5408f3f60644f024; // root
+        pubSignals[1] = root;
         pubSignals[2] = electionId;
         
         if (!plonkVerifier.verifyProof(zkpProof, pubSignals)) {
