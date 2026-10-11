@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  node1:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATA_FILE=votes_1.json
+      - PEERS=http://node2:3001,http://node3:3002,http://node4:3003
+  
+  node2:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATA_FILE=votes_2.json
+      - PEERS=http://node1:3000,http://node3:3002,http://node4:3003
+
+  node3:
+    build: .
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DATA_FILE=votes_3.json
+      - PEERS=http://node1:3000,http://node2:3001,http://node4:3003
+
+  node4:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - DATA_FILE=votes_4.json
+      - PEERS=http://node1:3000,http://node2:3001,http://node3:3002

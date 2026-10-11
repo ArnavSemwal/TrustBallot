@@ -1,17 +1,34 @@
 const express = require('express');
 const fs = require('fs');
 const crypto = require('crypto');
-const lockfile = require('proper-lockfile'); // Task B17: Imported the lockfile library
+const lockfile = require('proper-lockfile');
+const rateLimit = require('express-rate-limit');
+const { MerkleTree } = require('merkletreejs'); // Task B17
+const keccak256 = require('keccak256');         // Task B17
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '50kb' }));
 
-// Task B1: Use environment variables instead of hardcoded values
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = process.env.DATA_FILE || 'votes.json';
 const PEERS = process.env.PEERS ? process.env.PEERS.split(',') : [];
 
-// Task B4: Generate ECDSA keypair for node-to-node authentication
+// Task B16 & B17: Election Lifecycle State
+let electionState = 'CREATED'; // States: CREATED, OPEN, CLOSED, TALLY
+let currentMerkleRoot = null;
+
+// Chaos Middleware
+app.use((req, res, next) => {
+    if (req.headers['x-simulate-drop']) {
+        return res.status(500).json({ error: "Simulated network drop." });
+    }
+    if (req.headers['x-simulate-delay']) {
+        const delay = parseInt(req.headers['x-simulate-delay'], 10) || 3000;
+        return setTimeout(next, delay);
+    }
+    next();
+});
+
 const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
     namedCurve: 'secp256k1',
     publicKeyEncoding: { type: 'spki', format: 'pem' },
@@ -19,100 +36,107 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
 });
 console.log(`[Node ${PORT}] Security keys generated.`);
 
-// Task B3: Exact hash set to stop double voting
 const seenNullifiers = new Set();
 
-// Create the data file if it doesn't exist yet
 if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 }
 
-// --- Task B17-B27: Leader Failover & Heartbeat Logic ---
-let isLeader = (PORT === '3000' || PORT === 3000); // Default to port 3000 as initial leader
+let isLeader = (PORT === '3000' || PORT === 3000);
 let lastHeartbeat = Date.now();
 
-// Endpoint for followers to receive heartbeats from the leader
 app.post('/heartbeat', (req, res) => {
     lastHeartbeat = Date.now();
-    isLeader = false; // We received a ping, meaning someone else is the active leader
+    isLeader = false;
     res.status(200).send("Alive");
 });
 
-// Background process running every 2 seconds to manage network health
 setInterval(() => {
     if (isLeader) {
-        // If this node is the leader, broadcast heartbeats to all peers
-        PEERS.forEach(peerUrl => {
-            fetch(`${peerUrl}/heartbeat`, { method: 'POST' }).catch(() => {});
-        });
+        PEERS.forEach(peerUrl => fetch(`${peerUrl}/heartbeat`, { method: 'POST' }).catch(() => {}));
     } else {
-        // If this node is a follower, check if the leader went offline (5 second timeout)
         if (Date.now() - lastHeartbeat > 5000) {
-            console.log(`[Node ${PORT}] WARNING: Leader timed out! Taking over as new leader...`);
-            isLeader = true; // Claim leadership to keep the network alive
+            isLeader = true;
             lastHeartbeat = Date.now();
         }
     }
 }, 2000);
-// -------------------------------------------------------
 
-// Endpoint for nodes to acknowledge a peer's vote
+// Task B16 & B17: Election Lifecycle APIs
+app.post('/api/election/open', (req, res) => {
+    const { registered_voters } = req.body;
+    if (!registered_voters || !Array.isArray(registered_voters)) {
+        return res.status(400).json({ error: "Provide an array of registered_voters." });
+    }
+    
+    // Build the Merkle Tree for the registered voters
+    const leaves = registered_voters.map(voter => keccak256(voter));
+    const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+    
+    currentMerkleRoot = tree.getHexRoot();
+    electionState = 'OPEN';
+    
+    res.json({ message: "Election opened.", merkleRoot: currentMerkleRoot, state: electionState });
+});
+
+app.post('/api/election/close', (req, res) => {
+    electionState = 'CLOSED';
+    res.json({ message: "Election closed.", state: electionState });
+});
+
+app.post('/api/election/tally', (req, res) => {
+    electionState = 'TALLY';
+    res.json({ message: "Election moved to tally phase.", state: electionState });
+});
+
+app.get('/api/election/status', (req, res) => {
+    res.json({ state: electionState, merkleRoot: currentMerkleRoot });
+});
+
 app.post('/consensus', (req, res) => {
     const vote = req.body;
     
-    // Task B4: Verify the cryptograpic signature of the incoming node message
-    const peerPubKey = req.headers['x-node-pubkey'];
+    const rawPubKey = req.headers['x-node-pubkey'];
+    const peerPubKey = rawPubKey ? Buffer.from(rawPubKey, 'base64').toString('utf8') : null;
     const signature = req.headers['x-node-signature'];
     
-    if (!peerPubKey || !signature) {
-        console.log(`[Node ${PORT}] Rejecting consensus: Missing security headers.`);
-        return res.status(401).json({ error: "Unauthorized. Missing signature." });
-    }
+    if (!peerPubKey || !signature) return res.status(401).json({ error: "Missing security headers." });
     
     try {
         const payloadStr = JSON.stringify(vote);
-        const isValid = crypto.verify(
-            'sha256', 
-            Buffer.from(payloadStr), 
-            peerPubKey, 
-            Buffer.from(signature, 'hex')
-        );
-        
-        if (!isValid) {
-            console.log(`[Node ${PORT}] Rejecting consensus: Invalid cryptographic signature.`);
-            return res.status(401).json({ error: "Unauthorized. Invalid signature." });
-        }
+        const isValid = crypto.verify('sha256', Buffer.from(payloadStr), peerPubKey, Buffer.from(signature, 'hex'));
+        if (!isValid) return res.status(401).json({ error: "Invalid signature." });
     } catch (e) {
-        return res.status(401).json({ error: "Cryptographic error processing signature." });
+        return res.status(401).json({ error: "Cryptographic error." });
     }
 
-    if (seenNullifiers.has(vote.nullifier)) {
-        console.log(`[Node ${PORT}] Rejecting consensus: Nullifier ${vote.nullifier} already seen.`);
-        return res.status(400).json({ error: "Nullifier already seen by this node." });
-    }
+    if (seenNullifiers.has(vote.nullifier)) return res.status(400).json({ error: "Nullifier already seen." });
     seenNullifiers.add(vote.nullifier);
     res.status(200).send("Acknowledged");
 });
 
-// Endpoint for the kiosk to submit a vote
-app.post('/add_vote', async (req, res) => {
+const voteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: "Too many requests. Please try again later." }
+});
+
+app.post('/add_vote', voteLimiter, async (req, res) => {
+    // Task B16: Reject votes if the election is not OPEN
+    if (electionState !== 'OPEN') {
+        return res.status(403).json({ error: `Election is currently ${electionState}. Votes are only accepted during the OPEN phase.` });
+    }
+
     const vote = req.body;
 
-    // 1. Check for Double Voting
-    if (seenNullifiers.has(vote.nullifier)) {
-        console.log(`[Node ${PORT}] Rejected duplicate nullifier: ${vote.nullifier}`);
-        return res.status(400).json({ error: "Double vote detected. Nullifier rejected." });
+    if (!vote.voter_id || !vote.nullifier || !vote.encrypted_choice) {
+        return res.status(400).json({ error: "Invalid payload. Missing required fields." });
     }
-    
-    // Temporarily add it to the set while checking consensus
+
+    if (seenNullifiers.has(vote.nullifier)) return res.status(400).json({ error: "Double vote detected." });
     seenNullifiers.add(vote.nullifier);
 
-    // 2. Task B2: 3-of-4 Peer Consensus
-    let acknowledgements = 1; // The node counts itself
-    
-    console.log(`[Node ${PORT}] Asking peers for consensus...`);
-    
-    // Task B4: Cryptographically sign the message payload before sending it to peers
+    let acknowledgements = 1;
     const payloadStr = JSON.stringify(vote);
     const signature = crypto.sign('sha256', Buffer.from(payloadStr), privateKey).toString('hex');
     
@@ -121,56 +145,42 @@ app.post('/add_vote', async (req, res) => {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'x-node-pubkey': publicKey,
+                'x-node-pubkey': Buffer.from(publicKey).toString('base64'),
                 'x-node-signature': signature
             },
             body: payloadStr
         })
         .then(response => response.ok ? 1 : 0)
-        .catch(err => 0) // Treat unreachable nodes as 0
+        .catch(err => 0) 
     );
 
-    // Wait for all peers to reply
     const results = await Promise.all(peerRequests);
     acknowledgements += results.reduce((sum, count) => sum + count, 0);
 
-    // 3. Finalize the vote only if 3 out of 4 agree
     if (acknowledgements >= 3) {
-        console.log(`[Node ${PORT}] Consensus reached (${acknowledgements}/4). Saving vote.`);
-        
-        // Task B17: Offline Local Locks
         let release;
         try {
             release = await lockfile.lock(DATA_FILE, { retries: 5 });
-            
             const currentVotes = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-            
-            // Task B5: Append-only hash chain implementation
             const previousHash = currentVotes.length > 0 ? currentVotes[currentVotes.length - 1].hash : "0000000000000000000000000000000000000000000000000000000000000000";
             const currentHash = crypto.createHash('sha256').update(previousHash + JSON.stringify(vote)).digest('hex');
             
-            const securedVote = { ...vote, hash: currentHash, previous_hash: previousHash };
-            currentVotes.push(securedVote);
-            
+            currentVotes.push({ ...vote, hash: currentHash, previous_hash: previousHash });
             fs.writeFileSync(DATA_FILE, JSON.stringify(currentVotes, null, 2));
             
-            await release(); // Unlock
-            return res.status(200).json({ message: "Vote finalized with 3-of-4 consensus." });
-            
+            await release(); 
+            return res.status(200).json({ message: `Vote finalized with ${acknowledgements}-of-4 consensus.` });
         } catch (error) {
-            console.error(`[Node ${PORT}] File system busy. Could not save vote safely.`, error);
             if (release) await release();
             seenNullifiers.delete(vote.nullifier);
-            return res.status(500).json({ error: "System busy. Could not acquire local lock." });
+            return res.status(500).json({ error: "System busy." });
         }
-        
     } else {
-        console.log(`[Node ${PORT}] Consensus failed (${acknowledgements}/4).`);
-        seenNullifiers.delete(vote.nullifier); // Rollback
+        seenNullifiers.delete(vote.nullifier);
         return res.status(500).json({ error: "Consensus failed. Vote not finalized." });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`BFT Node running on port ${PORT}, writing to ${DATA_FILE}`);
+    console.log(`BFT Node running on port ${PORT}`);
 });
