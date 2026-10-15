@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import LanguagePage from './pages/LanguagePage';
 import AuthPage from './pages/AuthPage';
@@ -12,6 +12,7 @@ import BenchmarkOverlay from './components/BenchmarkOverlay';
 export default function App() {
   const { secondsLeft } = useKiosk();
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const location = useLocation();
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -24,7 +25,11 @@ export default function App() {
     };
   }, []);
 
-  if (secondsLeft <= 0) {
+  const isAdminOrAudit =
+    location.pathname.startsWith('/audit') || location.pathname.startsWith('/admin');
+  const isIdleKioskRoute = location.pathname === '/' || location.pathname === '/success';
+
+  if (!isAdminOrAudit && !isIdleKioskRoute && secondsLeft <= 0) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0D233A] text-white font-sans select-none px-8 text-center gap-4">
         <div className="w-20 h-20 rounded-full border-4 border-red-400 flex items-center justify-center text-4xl">
@@ -52,8 +57,8 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Global Inactivity Toast */}
-      {secondsLeft > 0 && secondsLeft <= 15 && (
+      {/* Global Inactivity Toast - strictly on active voting booth pages */}
+      {!isAdminOrAudit && !isIdleKioskRoute && secondsLeft > 0 && secondsLeft <= 15 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 animate-bounce select-none pointer-events-none z-[100]">
           <span className="text-2xl leading-none">⚠</span>
           <span className="font-semibold text-sm uppercase tracking-wider">

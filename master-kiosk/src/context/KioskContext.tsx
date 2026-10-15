@@ -92,15 +92,15 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     navigate('/', { replace: true });
   }, [navigate]);
 
+  const isAdminOrAudit =
+    location.pathname.startsWith('/audit') || location.pathname.startsWith('/admin');
+  const isIdleKioskRoute = location.pathname === '/' || location.pathname === '/success';
+
   const resetActivity = useCallback(() => {
-    if (
-      location.pathname !== '/' &&
-      location.pathname !== '/success' &&
-      location.pathname !== '/audit'
-    ) {
+    if (!isAdminOrAudit && !isIdleKioskRoute) {
       setSecondsLeft(SESSION_TIMEOUT_SECONDS);
     }
-  }, [location.pathname]);
+  }, [isAdminOrAudit, isIdleKioskRoute]);
 
   const setVoterVerified = useCallback((id: string) => {
     setVoterId(id);
@@ -108,11 +108,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleActivity = () => {
-      if (
-        location.pathname !== '/' &&
-        location.pathname !== '/success' &&
-        location.pathname !== '/audit'
-      ) {
+      if (!isAdminOrAudit && !isIdleKioskRoute) {
         setSecondsLeft(SESSION_TIMEOUT_SECONDS);
       }
     };
@@ -128,15 +124,12 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         window.removeEventListener(evt, handleActivity, { capture: true } as EventListenerOptions);
       });
     };
-  }, [location.pathname]);
+  }, [isAdminOrAudit, isIdleKioskRoute]);
 
   useEffect(() => {
-    if (
-      location.pathname === '/' ||
-      location.pathname === '/success' ||
-      location.pathname === '/audit'
-    ) {
+    if (isAdminOrAudit || isIdleKioskRoute) {
       if (timerRef.current) clearInterval(timerRef.current);
+      setSecondsLeft(SESSION_TIMEOUT_SECONDS);
       return;
     }
 
@@ -154,7 +147,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [location.pathname, resetSession]);
+  }, [isAdminOrAudit, isIdleKioskRoute, resetSession]);
 
   const votePoolRef = useRef(votePool);
   useEffect(() => {
