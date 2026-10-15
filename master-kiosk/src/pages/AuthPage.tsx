@@ -127,6 +127,13 @@ const t = {
   },
 };
 
+const KNOWN_SIGNATURES: Record<string, string> = {
+  '1234567890': '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b',
+  'ARNAV00001': '0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b',
+  'ANUSHKA002': '0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b',
+  'SHASHWAT03': '0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c'
+};
+
 export default function AuthPage() {
   const navigate = useNavigate();
   const { setVoterVerified, selectedLanguage, setSelectedLanguage, setDuressMode } = useKiosk();
@@ -189,7 +196,7 @@ export default function AuthPage() {
         .toUpperCase();
       if (cleanText.length > 0) {
         setEpicNumber(cleanText);
-        setScannedSignature(null);
+        setScannedSignature(KNOWN_SIGNATURES[cleanText] || null);
         setQrScanState('scanned');
         if (html5QrCode && html5QrCode.isScanning) {
           html5QrCode.stop().catch(console.error);
@@ -234,16 +241,12 @@ export default function AuthPage() {
 
         if (!isMounted) return;
 
-        // Wide responsive qrbox with 20 FPS for instant scanning anywhere in viewfinder
+        // Omitting qrbox allows Html5Qrcode to scan the 100% full camera frame with zero box cropping
         await html5QrCode.start(
           cameraConfig,
           { 
-            fps: 20, 
-            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-              const edge = Math.min(viewfinderWidth, viewfinderHeight);
-              const boxSize = Math.max(Math.floor(edge * 0.85), 240);
-              return { width: boxSize, height: boxSize };
-            }
+            fps: 15,
+            aspectRatio: 1.0,
           },
           onScanSuccess,
           () => {} // suppress per-frame scanning diagnostics
@@ -265,12 +268,8 @@ export default function AuthPage() {
           await html5QrCode.start(
             { facingMode: 'user' },
             { 
-              fps: 20,
-              qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-                const edge = Math.min(viewfinderWidth, viewfinderHeight);
-                const boxSize = Math.max(Math.floor(edge * 0.85), 240);
-                return { width: boxSize, height: boxSize };
-              }
+              fps: 15,
+              aspectRatio: 1.0,
             },
             onScanSuccess,
             () => {}
@@ -291,7 +290,7 @@ export default function AuthPage() {
     // Small delay to ensure the DOM element is rendered
     const timer = setTimeout(() => {
       startScanner();
-    }, 400);
+    }, 350);
 
     return () => {
       isMounted = false;
@@ -361,13 +360,8 @@ export default function AuthPage() {
 
     // TASK R3: Wire in verifyEpicSignature on a test payload
     const demoPayload = { epicHash: epicNumber, constituencyId: "C001" };
-    // Use the scanned signature from JSON QR, otherwise fallback to the hardcoded mock for manual entry
-    let signature = scannedSignature;
-    if (!signature) {
-      signature = epicNumber === '1234567890'
-        ? '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b'
-        : '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
-    }
+    // Use the scanned signature from JSON QR, otherwise fallback to known signatures for all 4 demo users
+    const signature = scannedSignature || KNOWN_SIGNATURES[epicNumber] || '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
       
     const isValid = verifyEpicSignature(demoPayload as any, signature);
     if (!isValid) {

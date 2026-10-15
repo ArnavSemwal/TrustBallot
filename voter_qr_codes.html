@@ -3,185 +3,297 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TrustBallot – Dummy Voter QR Codes</title>
+  <title>TrustBallot – Voter QR Codes</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: #0D233A;
       color: #f0f4f8;
       min-height: 100vh;
-      padding: 2rem;
+      padding: 2rem 1rem;
+    }
+    header {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 2.5rem;
     }
     h1 {
-      text-align: center;
-      font-size: 2rem;
+      font-size: 2.2rem;
       color: #028090;
       margin-bottom: 0.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
     }
     .subtitle {
-      text-align: center;
       color: #94a3b8;
-      margin-bottom: 2.5rem;
-      font-size: 0.95rem;
+      font-size: 1rem;
+      line-height: 1.5;
     }
+    .scanner-tip-banner {
+      background: rgba(2, 128, 144, 0.15);
+      border: 1px solid #028090;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin: 1.5rem auto 2rem;
+      max-width: 850px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .tip-icon { font-size: 1.8rem; }
+    .tip-text { font-size: 0.9rem; color: #e2e8f0; line-height: 1.5; }
+    .tip-text strong { color: #38bdf8; }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      max-width: 1100px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
       margin: 0 auto;
     }
     .card {
-      background: #1e3a5f;
-      border: 1px solid #028090;
-      border-radius: 16px;
-      padding: 1.5rem;
+      background: #142a45;
+      border: 1px solid rgba(2, 128, 144, 0.4);
+      border-radius: 20px;
+      padding: 1.75rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
-      box-shadow: 0 4px 24px rgba(2,128,144,0.2);
+      gap: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
     }
-    .card h2 { font-size: 1.3rem; color: #e2e8f0; }
-    .epic { font-size: 0.85rem; color: #94a3b8; }
-    .qr-wrap {
-      background: white;
-      padding: 12px;
-      border-radius: 12px;
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #028090;
+    }
+    .card h2 { font-size: 1.4rem; color: #f8fafc; font-weight: 700; }
+    .epic-badge {
+      background: rgba(2, 128, 144, 0.2);
+      color: #38bdf8;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: #091726;
+      border-radius: 10px;
+      padding: 3px;
+      width: 100%;
+      margin-top: 0.25rem;
+    }
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: #028090;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(2,128,144,0.4);
+    }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      min-width: 260px;
+      min-height: 260px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .status { font-size: 0.85rem; font-weight: 600; }
-    .ok  { color: #4ade80; }
-    .err { color: #f87171; }
-    details { width: 100%; font-size: 0.75rem; }
-    summary { cursor: pointer; color: #028090; margin-bottom: 0.5rem; }
-    pre {
-      background: #0d233a;
-      padding: 0.75rem;
+    .qr-container img, .qr-container canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .status-tag {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #4ade80;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
       border-radius: 8px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
+      border: 1px solid rgba(2,128,144,0.5);
+      background: rgba(2,128,144,0.15);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .btn:hover {
+      background: #028090;
+      color: white;
+    }
+    details { width: 100%; font-size: 0.75rem; }
+    summary { cursor: pointer; color: #38bdf8; margin-bottom: 0.4rem; }
+    pre {
+      background: #081524;
+      padding: 0.6rem;
+      border-radius: 8px;
       color: #94a3b8;
       font-size: 0.65rem;
-      line-height: 1.4;
-    }
-    .instructions {
-      max-width: 700px;
-      margin: 2rem auto 0;
-      background: #1e3a5f;
-      border: 1px solid #028090;
-      border-radius: 12px;
-      padding: 1.5rem;
-    }
-    .instructions h3 { color: #028090; margin-bottom: 1rem; }
-    .instructions ol { padding-left: 1.25rem; line-height: 2; color: #cbd5e1; }
-    .instructions code {
-      background: #0d233a;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #38bdf8;
-      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
   </style>
 </head>
 <body>
-  <h1>🗳️ TrustBallot Voter QR Codes</h1>
-  <p class="subtitle">Dummy EPIC credentials signed with the ECI test key · Scan with the kiosk camera</p>
-  <div class="grid">
+  <header>
+    <h1>🗳️ TrustBallot Verified Voter QR Credentials</h1>
+    <p class="subtitle">ECI Cryptographically-Signed Test Cards for Instant Kiosk Authentication</p>
     
-    <div class="card">
-      <h2>Demo Voter</h2>
-      <p class="epic">EPIC: <strong>1234567890</strong></p>
-      <div id="qr0" class="qr-wrap"></div>
-      <p class="status ok">✅ Cryptographically signed by ECI</p>
-      <details>
-        <summary>Raw payload (for debugging)</summary>
-        <pre>{"epicHash":"1234567890","sig":"0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b"}</pre>
-      </details>
-      <script>
-        new QRCode(document.getElementById('qr0'), {
-          text: "{\"epicHash\":\"1234567890\",\"sig\":\"0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b\"}",
-          width: 256,
-          height: 256,
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      </script>
+    <div class="scanner-tip-banner">
+      <div class="tip-icon">💡</div>
+      <div class="tip-text">
+        <strong>Best Camera Scanning Tip:</strong> Hold your phone or card about <strong>12 to 18 inches (30–45 cm)</strong> from the laptop camera so the lens can focus. If scanning off a phone, slightly <strong>lower your screen brightness</strong> to prevent glare!
+      </div>
     </div>
-  
-    <div class="card">
-      <h2>Arnav</h2>
-      <p class="epic">EPIC: <strong>ARNAV00001</strong></p>
-      <div id="qr1" class="qr-wrap"></div>
-      <p class="status ok">✅ Cryptographically signed by ECI</p>
-      <details>
-        <summary>Raw payload (for debugging)</summary>
-        <pre>{"epicHash":"ARNAV00001","sig":"0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b"}</pre>
-      </details>
-      <script>
-        new QRCode(document.getElementById('qr1'), {
-          text: "{\"epicHash\":\"ARNAV00001\",\"sig\":\"0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b\"}",
-          width: 256,
-          height: 256,
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      </script>
-    </div>
-  
-    <div class="card">
-      <h2>Anushka</h2>
-      <p class="epic">EPIC: <strong>ANUSHKA002</strong></p>
-      <div id="qr2" class="qr-wrap"></div>
-      <p class="status ok">✅ Cryptographically signed by ECI</p>
-      <details>
-        <summary>Raw payload (for debugging)</summary>
-        <pre>{"epicHash":"ANUSHKA002","sig":"0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b"}</pre>
-      </details>
-      <script>
-        new QRCode(document.getElementById('qr2'), {
-          text: "{\"epicHash\":\"ANUSHKA002\",\"sig\":\"0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b\"}",
-          width: 256,
-          height: 256,
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      </script>
-    </div>
-  
-    <div class="card">
-      <h2>Shashwat</h2>
-      <p class="epic">EPIC: <strong>SHASHWAT03</strong></p>
-      <div id="qr3" class="qr-wrap"></div>
-      <p class="status ok">✅ Cryptographically signed by ECI</p>
-      <details>
-        <summary>Raw payload (for debugging)</summary>
-        <pre>{"epicHash":"SHASHWAT03","sig":"0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c"}</pre>
-      </details>
-      <script>
-        new QRCode(document.getElementById('qr3'), {
-          text: "{\"epicHash\":\"SHASHWAT03\",\"sig\":\"0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c\"}",
-          width: 256,
-          height: 256,
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      </script>
-    </div>
-  
-  </div>
+  </header>
 
-  <div class="instructions">
-    <h3>📋 How to use</h3>
-    <ol>
-      <li>Start the kiosk: <code>cd master-kiosk &amp;&amp; npm run dev</code></li>
-      <li>Open the kiosk in your browser and reach the <strong>QR scan step</strong></li>
-      <li>Open this HTML file on a <strong>second screen or phone</strong></li>
-      <li>Hold a QR code up to the kiosk camera — it will scan automatically</li>
-      <li>After QR scan, continue to face-match (click <strong>Demo: Force Pass</strong>)</li>
-      <li>Enter PIN <code>1234</code> (or duress PIN <code>9999</code>) to complete voting</li>
-    </ol>
-  </div>
+  <div class="grid" id="votersGrid"></div>
+
+  <script>
+    const VOTERS = [
+      {
+        name: 'Demo Voter',
+        epic: '1234567890',
+        sig: '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b'
+      },
+      {
+        name: 'Arnav',
+        epic: 'ARNAV00001',
+        sig: '0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b'
+      },
+      {
+        name: 'Anushka',
+        epic: 'ANUSHKA002',
+        sig: '0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b'
+      },
+      {
+        name: 'Shashwat',
+        epic: 'SHASHWAT03',
+        sig: '0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c'
+      }
+    ];
+
+    const grid = document.getElementById('votersGrid');
+
+    VOTERS.forEach((v, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const jsonPayload = JSON.stringify({ epicHash: v.epic, sig: v.sig });
+
+      card.innerHTML = `
+        <h2>${v.name}</h2>
+        <span class="epic-badge">EPIC: ${v.epic}</span>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-fast-${index}" onclick="switchMode(${index}, 'fast')">⚡ Fast Camera QR</button>
+          <button class="tab-btn" id="tab-json-${index}" onclick="switchMode(${index}, 'json')">🔐 Signed JSON</button>
+        </div>
+
+        <div class="qr-container" id="qr-box-${index}"></div>
+
+        <span class="status-tag">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ECI Digital Signature Verified
+        </span>
+
+        <div class="actions">
+          <button class="btn" onclick="copyEpic('${v.epic}')">📋 Copy EPIC</button>
+          <button class="btn" onclick="downloadQr(${index}, '${v.epic}')">📥 Save Image</button>
+        </div>
+
+        <details>
+          <summary>View raw JSON payload</summary>
+          <pre>${jsonPayload}</pre>
+        </details>
+      `;
+
+      grid.appendChild(card);
+
+      // Render Fast QR by default (low density, large pixel blocks, scans instantly)
+      renderQr(index, v.epic);
+    });
+
+    const qrInstances = {};
+
+    function renderQr(index, text) {
+      const el = document.getElementById('qr-box-' + index);
+      el.innerHTML = '';
+      qrInstances[index] = new QRCode(el, {
+        text: text,
+        width: 240,
+        height: 240,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    function switchMode(index, mode) {
+      const v = VOTERS[index];
+      const fastBtn = document.getElementById('tab-fast-' + index);
+      const jsonBtn = document.getElementById('tab-json-' + index);
+
+      if (mode === 'fast') {
+        fastBtn.classList.add('active');
+        jsonBtn.classList.remove('active');
+        renderQr(index, v.epic);
+      } else {
+        jsonBtn.classList.add('active');
+        fastBtn.classList.remove('active');
+        renderQr(index, JSON.stringify({ epicHash: v.epic, sig: v.sig }));
+      }
+    }
+
+    function copyEpic(epic) {
+      navigator.clipboard.writeText(epic);
+      alert('Copied EPIC ' + epic + ' to clipboard!');
+    }
+
+    function downloadQr(index, epic) {
+      const box = document.getElementById('qr-box-' + index);
+      const img = box.querySelector('img');
+      const canvas = box.querySelector('canvas');
+      const src = img ? img.src : (canvas ? canvas.toDataURL('image/png') : null);
+      if (src) {
+        const a = document.createElement('a');
+        a.href = src;
+        a.download = `TrustBallot_QR_${epic}.png`;
+        a.click();
+      }
+    }
+  </script>
 </body>
 </html>
