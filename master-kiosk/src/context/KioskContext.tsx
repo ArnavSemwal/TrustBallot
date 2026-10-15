@@ -168,7 +168,16 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     }
 
     let poolToFlush = [...votePoolRef.current];
-    console.log('🚀 [MIDDLEWARE] FLUSHING VOTES TO CONSORTIUM:', poolToFlush);
+
+    // Cryptographically secure Fisher-Yates shuffle across the batch
+    for (let i = poolToFlush.length - 1; i > 0; i--) {
+      const randomBuffer = new Uint32Array(1);
+      crypto.getRandomValues(randomBuffer);
+      const j = randomBuffer[0] % (i + 1);
+      [poolToFlush[i], poolToFlush[j]] = [poolToFlush[j], poolToFlush[i]];
+    }
+
+    console.log('🚀 [MIDDLEWARE] FLUSHING BATCH (REAL + DECOYS) TO CONSORTIUM:', poolToFlush);
     const successfullySent = new Set();
 
     for (const payload of poolToFlush) {
@@ -198,7 +207,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       Benchmark.calculatePayloadSize(payloadObj);
 
       // 1. Generate verified transaction hash
-      const txData = `${payload.voterId || 'voter'}-${voteInt}-${payload.timestamp || Date.now()}`;
+      const txData = `${payload.voterId || 'voter'}-${voteInt}-${payload.timestamp || Date.now()}-${Math.random()}`;
       let txHash = '0x' + Math.random().toString(16).substring(2, 42);
       try {
         const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txData));
@@ -209,17 +218,15 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const timestamp = new Date().toISOString();
       const logString = `[${timestamp}] TX_HASH: ${txHash} STATUS: CRYPTOGRAPHICALLY_SEALED`;
 
-      // 2. Commit to Consortium Ledger (ONLY real votes, decoys are dropped)
-      if (!isDecoy) {
-        await recordSealedTransaction({
-          txHash,
-          nullifier,
-          timestamp,
-          candidateId: candidateStr,
-          isDecoy: false,
-          logString,
-        });
-      }
+      // 2. Commit all 3 sealed transactions in the batch (real + decoys) to the ciphertext stream
+      await recordSealedTransaction({
+        txHash,
+        nullifier,
+        timestamp,
+        candidateId: candidateStr,
+        isDecoy,
+        logString,
+      });
 
       // 3. Forward to backend if reachable
       try {

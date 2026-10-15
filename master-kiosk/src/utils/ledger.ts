@@ -9,15 +9,23 @@ export interface SealedTransaction {
   logString: string;
 }
 
-// Bumping to v2 to immediately clear previous spam records
-const STORAGE_KEY = 'trustballot-transactions-v2';
+export interface DisputeRecord {
+  ref: string;
+  timestamp: string;
+  status: string;
+}
+
+const STORAGE_KEY = 'trustballot-transactions-v4';
+const DISPUTES_KEY = 'trustballot-disputes-v4';
 const BFT_CHANNEL_NAME = 'trustballot-consortium-mesh';
 
-// Clean up old spam storage keys from previous runs
+// Clean up old keys
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('trustballot-transactions');
+    localStorage.removeItem('trustballot-transactions-v2');
     del('trustballot-transactions').catch(() => {});
+    del('trustballot-transactions-v2').catch(() => {});
   } catch {}
 }
 
@@ -32,14 +40,10 @@ try {
 
 /**
  * Record a newly sealed transaction into the consortium ledger.
- * Only REAL voter transactions are recorded (decoys are dropped from the official ledger).
+ * Records all sealed ciphertext payloads in the batch (real + decoys) to maintain
+ * cryptographic indistinguishability on the audit console.
  */
 export async function recordSealedTransaction(tx: SealedTransaction): Promise<void> {
-  if (tx.isDecoy) {
-    // Decoy votes are strictly for dummy network obfuscation and are NEVER recorded in the audit log
-    return;
-  }
-
   try {
     const existing: SealedTransaction[] = (await get(STORAGE_KEY)) || [];
     if (!existing.some((t) => t.txHash === tx.txHash)) {
@@ -68,18 +72,61 @@ export async function recordSealedTransaction(tx: SealedTransaction): Promise<vo
 export async function getSealedTransactions(): Promise<string[]> {
   try {
     const records: SealedTransaction[] = (await get(STORAGE_KEY)) || [];
-    const valid = records.filter((r) => !r.isDecoy);
-    if (valid.length > 0) {
-      return valid.map((r) => r.logString);
+    if (records.length > 0) {
+      return records.map((r) => r.logString);
     }
     const local = localStorage.getItem(STORAGE_KEY);
     if (local) {
       const parsed: SealedTransaction[] = JSON.parse(local);
-      return parsed.filter((r) => !r.isDecoy).map((r) => r.logString);
+      return parsed.map((r) => r.logString);
     }
   } catch (err) {
     console.warn('Failed to read sealed transactions:', err);
   }
+  return [];
+}
+
+/**
+ * Record a procedural dispute into storage and broadcast to consortium.
+ */
+export async function recordDispute(ref: string): Promise<DisputeRecord> {
+  const dispute: DisputeRecord = {
+    ref,
+    timestamp: new Date().toISOString(),
+    status: 'FLAGGED_FOR_MANUAL_AUDIT',
+  };
+
+  try {
+    const existing: DisputeRecord[] = (await get(DISPUTES_KEY)) || [];
+    const updated = [dispute, ...existing];
+    await set(DISPUTES_KEY, updated);
+    try {
+      localStorage.setItem(DISPUTES_KEY, JSON.stringify(updated));
+    } catch {}
+
+    if (meshChannel) {
+      meshChannel.postMessage({
+        type: 'NEW_DISPUTE',
+        dispute,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to record dispute:', err);
+  }
+
+  return dispute;
+}
+
+/**
+ * Retrieve all flagged disputes.
+ */
+export async function getDisputes(): Promise<DisputeRecord[]> {
+  try {
+    const records: DisputeRecord[] = (await get(DISPUTES_KEY)) || [];
+    if (records.length > 0) return records;
+    const local = localStorage.getItem(DISPUTES_KEY);
+    if (local) return JSON.parse(local);
+  } catch {}
   return [];
 }
 
@@ -89,7 +136,9 @@ export async function getSealedTransactions(): Promise<string[]> {
 export async function clearLedger(): Promise<void> {
   try {
     await del(STORAGE_KEY);
+    await del(DISPUTES_KEY);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(DISPUTES_KEY);
     if (meshChannel) {
       meshChannel.postMessage({ type: 'CLEAR_LEDGER' });
     }
@@ -99,10 +148,11 @@ export async function clearLedger(): Promise<void> {
 }
 
 /**
- * Subscribe to live transaction events from the consortium mesh.
+ * Subscribe to live events from the consortium mesh.
  */
 export function subscribeToMesh(
   onTx: (tx: SealedTransaction) => void,
+  onDispute?: (d: DisputeRecord) => void,
   onClear?: () => void
 ): () => void {
   if (!meshChannel) {
@@ -114,7 +164,7 @@ export function subscribeToMesh(
           try {
             const list: SealedTransaction[] = JSON.parse(e.newValue);
             const latest = list[list.length - 1];
-            if (latest && !latest.isDecoy) onTx(latest);
+            if (latest) onTx(latest);
           } catch {}
         }
       }
@@ -125,9 +175,9 @@ export function subscribeToMesh(
 
   const handler = (event: MessageEvent) => {
     if (event.data?.type === 'NEW_TRANSACTION' && event.data.transaction) {
-      if (!event.data.transaction.isDecoy) {
-        onTx(event.data.transaction);
-      }
+      onTx(event.data.transaction);
+    } else if (event.data?.type === 'NEW_DISPUTE' && event.data.dispute) {
+      onDispute?.(event.data.dispute);
     } else if (event.data?.type === 'CLEAR_LEDGER') {
       onClear?.();
     }
