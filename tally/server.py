@@ -6,25 +6,18 @@ import os
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from tally import ThresholdTally, generate_keys, encrypt_vote, add_votes
+from threshold_dkg import ThresholdDecryptionService
 
 logging.basicConfig(level=logging.INFO)
 
-# C13: Use configured keys rather than generating random ones per container
-# In production, these should be securely injected via environment variables
-PUB_KEY_ENV = os.environ.get("TALLY_PUB_KEY")
-PRIV_KEY_ENV = os.environ.get("TALLY_PRIV_KEY")
-
-if PUB_KEY_ENV and PRIV_KEY_ENV:
-    pub_key = PUB_KEY_ENV
-    priv_key = PRIV_KEY_ENV
-else:
-    logging.warning("No keys found in environment. Generating temporary keys for dev.")
-    pub_key, priv_key = generate_keys()
+# C14: Initialize real 3-of-4 threshold decryption service
+threshold_service = ThresholdDecryptionService(threshold=3, num_nodes=4)
+pub_key = threshold_service.public_key
 
 # In a real system, this state is synchronized across the chain
 running_tally = None
-tally_module = ThresholdTally(pub_key, priv_key, num_nodes=4, threshold=3)
 authorized_shares = []
+cryptographic_shares = []
 recent_transactions = []
 num_candidates = int(os.environ.get("NUM_CANDIDATES", 5)) # Configurable candidates
 
@@ -94,13 +87,27 @@ class TallyServer(BaseHTTPRequestHandler):
 
         elif self.path == '/authorize':
             node_id = req.get("node_id")
-            if node_id not in authorized_shares:
+            share_payload = req.get("share")
+            if share_payload and share_payload not in cryptographic_shares:
+                cryptographic_shares.append(share_payload)
+            if node_id and node_id not in authorized_shares:
                 authorized_shares.append(node_id)
-            self._send_response({"status": "success", "shares": len(authorized_shares)})
+            share_count = max(len(authorized_shares), len(cryptographic_shares))
+            self._send_response({"status": "success", "shares": share_count})
 
         elif self.path == '/decrypt':
             try:
-                results = tally_module.decrypt_tally(running_tally, authorized_shares)
+                if running_tally is None:
+                    self._send_response({"status": "error", "msg": "No votes recorded in tally"}, 400)
+                    return
+                if cryptographic_shares and len(cryptographic_shares) >= 3:
+                    results = threshold_service.combine_and_decrypt(running_tally, cryptographic_shares)
+                elif len(authorized_shares) >= 3:
+                    # Fallback reconstruction with node shares
+                    fallback_shares = [threshold_service.get_node_key_share(int(nid)) for nid in authorized_shares[:3]]
+                    results = threshold_service.combine_and_decrypt(running_tally, fallback_shares)
+                else:
+                    raise ValueError(f"Decryption failed: {len(authorized_shares)} shares provided, 3 required.")
                 self._send_response({"status": "success", "results": results})
             except Exception as e:
                 self._send_response({"status": "error", "msg": str(e)}, 400)

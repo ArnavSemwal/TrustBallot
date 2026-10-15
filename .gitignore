@@ -16,3 +16,5 @@ circuits/circuit_final.zkey
 circuits/verification_key.json
 circuits/ptau/
 types/
+__pycache__/
+*.pyc
