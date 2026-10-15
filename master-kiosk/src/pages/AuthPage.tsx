@@ -166,7 +166,9 @@ export default function AuthPage() {
           setEpicNumber(data.epicHash);
           setScannedSignature(data.sig);
           setQrScanState('scanned');
-          html5QrCode?.stop().catch(console.error);
+          if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(console.error);
+          }
           return;
         }
       } catch (e) {
@@ -182,54 +184,88 @@ export default function AuthPage() {
         setEpicNumber(cleanText);
         setScannedSignature(null);
         setQrScanState('scanned');
-        html5QrCode?.stop().catch(console.error);
+        if (html5QrCode && html5QrCode.isScanning) {
+          html5QrCode.stop().catch(console.error);
+        }
       }
     };
 
-    const startScanner = (facingMode: string) => {
-      html5QrCode = new Html5Qrcode('qr-reader');
-      html5QrCode
-        .start(
-          { facingMode },
+    const startScanner = async () => {
+      const qrEl = document.getElementById('qr-reader');
+      if (!qrEl || !isMounted) return;
+
+      try {
+        html5QrCode = new Html5Qrcode('qr-reader');
+
+        // Check for available cameras if supported
+        let cameraConfig: any = { facingMode: 'environment' };
+        if (typeof Html5Qrcode.getCameras === 'function') {
+          try {
+            const devices = await Html5Qrcode.getCameras();
+            if (devices && devices.length > 0) {
+              const backCam = devices.find((d) => /back|rear|environment/i.test(d.label));
+              cameraConfig = backCam ? backCam.id : devices[0].id;
+            }
+          } catch {
+            cameraConfig = { facingMode: 'user' };
+          }
+        }
+
+        if (!isMounted) return;
+
+        await html5QrCode.start(
+          cameraConfig,
           { fps: 10, qrbox: { width: 220, height: 220 } },
           onScanSuccess,
           () => {} // suppress per-frame errors
-        )
-        .then(() => {
-          if (isMounted) setQrScanState('active');
-        })
-        .catch(() => {
-          // If preferred camera unavailable, try the other
-          if (!isMounted) return;
-          const fallback = facingMode === 'environment' ? 'user' : 'environment';
-          html5QrCode = new Html5Qrcode('qr-reader');
-          html5QrCode
-            .start(
-              { facingMode: fallback },
-              { fps: 10, qrbox: { width: 220, height: 220 } },
-              onScanSuccess,
-              () => {}
-            )
-            .then(() => { if (isMounted) setQrScanState('active'); })
-            .catch((err: unknown) => {
-              console.error('QR scanner failed to start:', err);
-              if (isMounted) setQrScanState('error');
-            });
-        });
+        );
+
+        if (isMounted) {
+          setQrScanState('active');
+        } else if (html5QrCode.isScanning) {
+          await html5QrCode.stop().catch(() => {});
+        }
+      } catch (err) {
+        console.warn('QR scanner failed with primary config, attempting fallback camera:', err);
+        if (!isMounted) return;
+
+        try {
+          if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode('qr-reader');
+          }
+          await html5QrCode.start(
+            { facingMode: 'user' },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            onScanSuccess,
+            () => {}
+          );
+
+          if (isMounted) {
+            setQrScanState('active');
+          } else if (html5QrCode.isScanning) {
+            await html5QrCode.stop().catch(() => {});
+          }
+        } catch (fallbackErr) {
+          console.error('QR scanner fallback failed:', fallbackErr);
+          if (isMounted) setQrScanState('error');
+        }
+      }
     };
 
     // Small delay to ensure the DOM element is rendered
     const timer = setTimeout(() => {
-      if (!isMounted) return;
-      // Try environment (rear) camera first — best for scanning printed QR codes
-      startScanner('environment');
-    }, 500);
+      startScanner();
+    }, 400);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(console.error);
+        html5QrCode.stop().catch(console.error).finally(() => {
+          try {
+            html5QrCode?.clear();
+          } catch {}
+        });
       }
     };
   }, [authStep]);
@@ -646,19 +682,25 @@ export default function AuthPage() {
         {/* LEFT: Scanner */}
         <div className="flex flex-col items-center justify-center gap-3 pr-6 border-r border-[#0D233A]/10">
           <div
-            id="qr-reader"
             className="relative aspect-square border-4 border-dashed border-[#028090] rounded-2xl flex flex-col items-center justify-center bg-white/70 overflow-hidden"
             style={{ height: 'min(42vw, 54vh)', width: 'min(42vw, 54vh)' }}
             aria-label="QR code scanner area"
           >
-            <span className="absolute top-2.5 left-2.5 w-7 h-7 border-t-[3px] border-l-[3px] border-[#028090] rounded-tl-lg z-10" />
-            <span className="absolute top-2.5 right-2.5 w-7 h-7 border-t-[3px] border-r-[3px] border-[#028090] rounded-tr-lg z-10" />
-            <span className="absolute bottom-2.5 left-2.5 w-7 h-7 border-b-[3px] border-l-[3px] border-[#028090] rounded-bl-lg z-10" />
-            <span className="absolute bottom-2.5 right-2.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#028090] rounded-br-lg z-10" />
+            {/* Dedicated HTML5-QRCode container — React will never reconcile child nodes here */}
+            <div
+              id="qr-reader"
+              className="absolute inset-0 w-full h-full overflow-hidden rounded-2xl [&_video]:w-full [&_video]:h-full [&_video]:object-cover"
+            />
 
-            {/* This inner div is replaced by html5-qrcode's video feed */}
+            {/* Corner brackets */}
+            <span className="pointer-events-none absolute top-2.5 left-2.5 w-7 h-7 border-t-[3px] border-l-[3px] border-[#028090] rounded-tl-lg z-10" />
+            <span className="pointer-events-none absolute top-2.5 right-2.5 w-7 h-7 border-t-[3px] border-r-[3px] border-[#028090] rounded-tr-lg z-10" />
+            <span className="pointer-events-none absolute bottom-2.5 left-2.5 w-7 h-7 border-b-[3px] border-l-[3px] border-[#028090] rounded-bl-lg z-10" />
+            <span className="pointer-events-none absolute bottom-2.5 right-2.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#028090] rounded-br-lg z-10" />
+
+            {/* Sibling overlays managed cleanly by React */}
             {qrScanState === 'idle' && (
-              <div id="qr-reader-placeholder" className="flex flex-col items-center z-0">
+              <div id="qr-reader-placeholder" className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-10">
                 <QRCodeSVG />
                 <p className="mt-3 text-xs font-medium uppercase tracking-widest text-[#028090] opacity-60">
                   {currentLang.awaitingQr}
@@ -667,7 +709,7 @@ export default function AuthPage() {
             )}
 
             {qrScanState === 'scanned' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-20 rounded-2xl gap-3">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20 rounded-2xl gap-3">
                 <svg viewBox="0 0 52 52" className="w-16 h-16 text-emerald-500" fill="none">
                   <circle cx="26" cy="26" r="25" stroke="currentColor" strokeWidth="2" />
                   <path d="M14 26l8 8 16-16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
@@ -678,14 +720,14 @@ export default function AuthPage() {
             )}
 
             {qrScanState === 'error' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-20 rounded-2xl gap-3">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 z-20 rounded-2xl gap-3">
                 <p className="text-sm font-bold text-red-500 uppercase tracking-widest">Camera Error</p>
                 <p className="text-xs text-[#0D233A]/60">Please allow camera access and refresh</p>
               </div>
             )}
 
             {qrScanState === 'active' && (
-              <div className="scanner-laser absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090] z-10" />
+              <div className="scanner-laser pointer-events-none absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090] z-10" />
             )}
           </div>
 
