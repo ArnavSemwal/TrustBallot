@@ -29,7 +29,7 @@ test('AuthPage progresses from QR to PIN correctly', async () => {
   );
 
   // QR Step
-  expect(screen.getByText('Voter Verification')).toBeInTheDocument();
+  expect(screen.getByText(/Voter Verification/i)).toBeInTheDocument();
   
   // Enter EPIC manually
   fireEvent.click(screen.getByText('1'));

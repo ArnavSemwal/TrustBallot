@@ -85,6 +85,50 @@ async function main() {
       throw new Error("Vote should have emitted VoteAccepted event but didn't!");
   }
 
+  console.log("\n--- Testing Duplicate Nullifier Rejection ---");
+  const dupTx = await trustBallot.connect(eciAdmin).submitVote(
+    kioskId,
+    electionId,
+    nullifier,
+    ciphertextVote,
+    zkpProof,
+    dilithiumSig
+  );
+  const dupReceipt = await dupTx.wait();
+  const dupRejectedEvent = dupReceipt.logs.find(log => {
+      try {
+          const parsed = trustBallot.interface.parseLog(log);
+          return parsed && parsed.name === "VoteRejected" && parsed.args.reason === "duplicate_nullifier";
+      } catch (e) { return false; }
+  });
+  if (dupRejectedEvent) {
+      console.log("Duplicate nullifier correctly rejected with VoteRejected('duplicate_nullifier').");
+  } else {
+      throw new Error("Duplicate nullifier was not rejected!");
+  }
+
+  console.log("\n--- Testing Unauthorized Caller Rejection ---");
+  const unauthTx = await trustBallot.connect(signer).submitVote(
+    kioskId,
+    electionId,
+    "0x9999999999999999999999999999999999999999999999999999999999999999",
+    ciphertextVote,
+    zkpProof,
+    dilithiumSig
+  );
+  const unauthReceipt = await unauthTx.wait();
+  const unauthEvent = unauthReceipt.logs.find(log => {
+      try {
+          const parsed = trustBallot.interface.parseLog(log);
+          return parsed && parsed.name === "VoteRejected" && parsed.args.reason === "unauthorized_caller";
+      } catch (e) { return false; }
+  });
+  if (unauthEvent) {
+      console.log("Unauthorized caller correctly rejected with VoteRejected('unauthorized_caller').");
+  } else {
+      throw new Error("Unauthorized caller was not rejected!");
+  }
+
   console.log("\n--- E2E Test Suite Passed ---");
 }
 

@@ -74,6 +74,7 @@ const PAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
 
 type AuthStep = 'qr' | 'webcam' | 'pin';
 type ScanPhase = 'scanning' | 'success' | 'fail';
+type QrScanState = 'idle' | 'active' | 'scanned' | 'error';
 
 const t = {
   en: {
@@ -136,6 +137,7 @@ export default function AuthPage() {
   // ── Step 1: EPIC/QR entry state ──
   const [epicNumber, setEpicNumber] = useState('');
   const [scannedSignature, setScannedSignature] = useState<string | null>(null);
+  const [qrScanState, setQrScanState] = useState<QrScanState>('idle');
 
   function pressKey(val: string) {
     setEpicNumber((prev) => (prev.length < 10 ? prev + val : prev));
@@ -154,45 +156,78 @@ export default function AuthPage() {
 
     let html5QrCode: Html5Qrcode | null = null;
     let isMounted = true;
+    setQrScanState('idle');
 
-    // Small delay to ensure the DOM element is rendered
-    setTimeout(() => {
+    const onScanSuccess = (decodedText: string) => {
       if (!isMounted) return;
-      html5QrCode = new Html5Qrcode('qr-reader');
+      try {
+        const data = JSON.parse(decodedText);
+        if (data.epicHash && data.sig) {
+          setEpicNumber(data.epicHash);
+          setScannedSignature(data.sig);
+          setQrScanState('scanned');
+          html5QrCode?.stop().catch(console.error);
+          return;
+        }
+      } catch (e) {
+        // Not JSON — fallback to plain-text EPIC number
+      }
 
+      // Keep alphanumeric parts of the payload (EPIC format: 10 chars e.g. ABC1234567)
+      const cleanText = decodedText
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 10)
+        .toUpperCase();
+      if (cleanText.length > 0) {
+        setEpicNumber(cleanText);
+        setScannedSignature(null);
+        setQrScanState('scanned');
+        html5QrCode?.stop().catch(console.error);
+      }
+    };
+
+    const startScanner = (facingMode: string) => {
+      html5QrCode = new Html5Qrcode('qr-reader');
       html5QrCode
         .start(
-          { facingMode: 'user' }, // using user facing for kiosk/webcam
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            try {
-              const data = JSON.parse(decodedText);
-              if (data.epicHash && data.sig) {
-                setEpicNumber(data.epicHash);
-                setScannedSignature(data.sig);
-                html5QrCode?.stop().catch(console.error);
-                return;
-              }
-            } catch (e) {
-              // Not JSON, fallback to old behavior
-            }
-
-            // Keep alphanumeric parts of the payload (EPIC format can be 10 chars, e.g. ABC1234567 or 10 digits)
-            const cleanText = decodedText
-              .replace(/[^a-zA-Z0-9]/g, '')
-              .substring(0, 10)
-              .toUpperCase();
-            setEpicNumber(cleanText);
-            setScannedSignature(null);
-            html5QrCode?.stop().catch(console.error);
-          },
-          () => {} // ignore scan errors
+          { facingMode },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          onScanSuccess,
+          () => {} // suppress per-frame errors
         )
-        .catch(console.error);
+        .then(() => {
+          if (isMounted) setQrScanState('active');
+        })
+        .catch(() => {
+          // If preferred camera unavailable, try the other
+          if (!isMounted) return;
+          const fallback = facingMode === 'environment' ? 'user' : 'environment';
+          html5QrCode = new Html5Qrcode('qr-reader');
+          html5QrCode
+            .start(
+              { facingMode: fallback },
+              { fps: 10, qrbox: { width: 220, height: 220 } },
+              onScanSuccess,
+              () => {}
+            )
+            .then(() => { if (isMounted) setQrScanState('active'); })
+            .catch((err: unknown) => {
+              console.error('QR scanner failed to start:', err);
+              if (isMounted) setQrScanState('error');
+            });
+        });
+    };
+
+    // Small delay to ensure the DOM element is rendered
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      // Try environment (rear) camera first — best for scanning printed QR codes
+      startScanner('environment');
     }, 500);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
       if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().catch(console.error);
       }
@@ -622,14 +657,36 @@ export default function AuthPage() {
             <span className="absolute bottom-2.5 right-2.5 w-7 h-7 border-b-[3px] border-r-[3px] border-[#028090] rounded-br-lg z-10" />
 
             {/* This inner div is replaced by html5-qrcode's video feed */}
-            <div id="qr-reader-placeholder" className="flex flex-col items-center z-0">
-              <QRCodeSVG />
-              <p className="mt-3 text-xs font-medium uppercase tracking-widest text-[#028090] opacity-60">
-                {currentLang.awaitingQr}
-              </p>
-            </div>
+            {qrScanState === 'idle' && (
+              <div id="qr-reader-placeholder" className="flex flex-col items-center z-0">
+                <QRCodeSVG />
+                <p className="mt-3 text-xs font-medium uppercase tracking-widest text-[#028090] opacity-60">
+                  {currentLang.awaitingQr}
+                </p>
+              </div>
+            )}
 
-            <div className="scanner-laser absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090] z-10" />
+            {qrScanState === 'scanned' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-20 rounded-2xl gap-3">
+                <svg viewBox="0 0 52 52" className="w-16 h-16 text-emerald-500" fill="none">
+                  <circle cx="26" cy="26" r="25" stroke="currentColor" strokeWidth="2" />
+                  <path d="M14 26l8 8 16-16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest">QR Scanned!</p>
+                <p className="text-xs text-[#0D233A]/60">{epicNumber}</p>
+              </div>
+            )}
+
+            {qrScanState === 'error' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-20 rounded-2xl gap-3">
+                <p className="text-sm font-bold text-red-500 uppercase tracking-widest">Camera Error</p>
+                <p className="text-xs text-[#0D233A]/60">Please allow camera access and refresh</p>
+              </div>
+            )}
+
+            {qrScanState === 'active' && (
+              <div className="scanner-laser absolute left-4 right-4 h-[3px] rounded-full bg-[#028090] opacity-75 shadow-[0_0_8px_2px_#028090] z-10" />
+            )}
           </div>
 
           <p className="text-sm font-medium text-[#0D233A] opacity-65 text-center">

@@ -1,21 +1,63 @@
+version: '3.8'
+
 services:
-  node1:
-    build: ./tally
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
     ports:
-      - "8001:8000"
-    container_name: trustballot-node1
-  node2:
-    build: ./tally
+      - "8000:8000"
+    container_name: trustballot-api
+    restart: unless-stopped
+
+  bft-node1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "8002:8000"
-    container_name: trustballot-node2
-  node3:
-    build: ./tally
+      - "3001:3000"
+    environment:
+      - PORT=3000
+      - DATA_FILE=votes_node1.json
+      - PEERS=http://bft-node2:3000,http://bft-node3:3000,http://bft-node4:3000
+    container_name: trustballot-bft1
+    restart: unless-stopped
+
+  bft-node2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "8003:8000"
-    container_name: trustballot-node3
-  node4:
-    build: ./tally
+      - "3002:3000"
+    environment:
+      - PORT=3000
+      - DATA_FILE=votes_node2.json
+      - PEERS=http://bft-node1:3000,http://bft-node3:3000,http://bft-node4:3000
+    container_name: trustballot-bft2
+    restart: unless-stopped
+
+  bft-node3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "8004:8000"
-    container_name: trustballot-node4
+      - "3003:3000"
+    environment:
+      - PORT=3000
+      - DATA_FILE=votes_node3.json
+      - PEERS=http://bft-node1:3000,http://bft-node2:3000,http://bft-node4:3000
+    container_name: trustballot-bft3
+    restart: unless-stopped
+
+  bft-node4:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3000"
+    environment:
+      - PORT=3000
+      - DATA_FILE=votes_node4.json
+      - PEERS=http://bft-node1:3000,http://bft-node2:3000,http://bft-node3:3000
+    container_name: trustballot-bft4
+    restart: unless-stopped

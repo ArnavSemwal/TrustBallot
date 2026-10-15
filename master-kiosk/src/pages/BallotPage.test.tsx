@@ -21,10 +21,13 @@ test('BallotPage renders and allows candidate selection', () => {
   const candidates = screen.getAllByRole('button');
   expect(candidates.length).toBeGreaterThan(0);
   
-  // Select first candidate
-  fireEvent.click(candidates[0]);
+  // Click first candidate vote button
+  const voteBtns = screen.getAllByText('VOTE');
+  expect(voteBtns.length).toBeGreaterThan(0);
+  fireEvent.click(voteBtns[0]);
   
-  // Confirm button should be enabled
-  const confirmBtn = screen.getByText('Confirm Selection');
-  expect(confirmBtn).toBeEnabled();
+  // Confirm modal should appear
+  expect(screen.getByText('CONFIRM YOUR VOTE')).toBeInTheDocument();
+  const yesBtn = screen.getByText('YES');
+  expect(yesBtn).toBeEnabled();
 });

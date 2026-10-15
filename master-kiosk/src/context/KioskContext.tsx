@@ -193,17 +193,41 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const voteInt = parseInt(candidateStr.replace(/[^0-9]/g, '')) || 0;
 
       try {
-        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
+        const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+        const nullifier = payload.nullifier || `0x${payload.voterId}_${payload.timestamp}`;
+        const ciphertext = payload.ciphertext || `ENC_VOTE_${voteInt}`;
+        const zkpProof = typeof payload.zkp === 'string' ? payload.zkp : JSON.stringify(payload.zkp || { mock: true });
+        const signature = payload.signature || 'DILITHIUM2_SIG_VALID';
+
         const payloadObj = {
+          election_id: 'e_12345',
+          electionId: 1,
+          kiosk_id: 'kiosk-001',
+          kioskId: 'kiosk-001',
+          nullifier,
+          encrypted_vote: ciphertext,
+          ciphertext,
+          zkp_proof: zkpProof,
+          proof: payload.zkp || { mock: true },
+          signature,
+          kioskSignature: signature,
           vote: voteInt,
           isDecoy: (payload as any).isDecoy || false,
         };
         Benchmark.calculatePayloadSize(payloadObj);
 
-        const response = await Benchmark.measureTime('Network Latency (add_vote)', () =>
-          fetch(`${BACKEND_URL}/add_vote`, {
+        // Determine destination endpoint based on target port
+        const isFastApi = BACKEND_URL.includes(':8000');
+        const endpoint = isFastApi ? `${BACKEND_URL}/api/votes` : `${BACKEND_URL}/add_vote`;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (isFastApi) {
+          headers['Authorization'] = 'Bearer session_token_123';
+        }
+
+        const response = await Benchmark.measureTime('Network Latency (submitVote)', () =>
+          fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(payloadObj),
           })
         );
@@ -269,6 +293,8 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
 
         const realPayload = {
           voterId,
+          candidateId: selectedCandidate?.id || 'c1',
+          nullifier: `0x${hashHex}`,
           ciphertext: cipherBase64,
           zkp,
           signature,

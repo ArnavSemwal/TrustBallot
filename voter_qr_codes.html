@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrustBallot – Dummy Voter QR Codes</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0D233A;
+      color: #f0f4f8;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #028090;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e3a5f;
+      border: 1px solid #028090;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 4px 24px rgba(2,128,144,0.2);
+    }
+    .card h2 { font-size: 1.3rem; color: #e2e8f0; }
+    .epic { font-size: 0.85rem; color: #94a3b8; }
+    .qr-wrap {
+      background: white;
+      padding: 12px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status { font-size: 0.85rem; font-weight: 600; }
+    .ok  { color: #4ade80; }
+    .err { color: #f87171; }
+    details { width: 100%; font-size: 0.75rem; }
+    summary { cursor: pointer; color: #028090; margin-bottom: 0.5rem; }
+    pre {
+      background: #0d233a;
+      padding: 0.75rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #94a3b8;
+      font-size: 0.65rem;
+      line-height: 1.4;
+    }
+    .instructions {
+      max-width: 700px;
+      margin: 2rem auto 0;
+      background: #1e3a5f;
+      border: 1px solid #028090;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .instructions h3 { color: #028090; margin-bottom: 1rem; }
+    .instructions ol { padding-left: 1.25rem; line-height: 2; color: #cbd5e1; }
+    .instructions code {
+      background: #0d233a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🗳️ TrustBallot Voter QR Codes</h1>
+  <p class="subtitle">Dummy EPIC credentials signed with the ECI test key · Scan with the kiosk camera</p>
+  <div class="grid">
+    
+    <div class="card">
+      <h2>Demo Voter</h2>
+      <p class="epic">EPIC: <strong>1234567890</strong></p>
+      <div id="qr0" class="qr-wrap"></div>
+      <p class="status ok">✅ Cryptographically signed by ECI</p>
+      <details>
+        <summary>Raw payload (for debugging)</summary>
+        <pre>{"epicHash":"1234567890","sig":"0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b"}</pre>
+      </details>
+      <script>
+        new QRCode(document.getElementById('qr0'), {
+          text: "{\"epicHash\":\"1234567890\",\"sig\":\"0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b\"}",
+          width: 256,
+          height: 256,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      </script>
+    </div>
+  
+    <div class="card">
+      <h2>Arnav</h2>
+      <p class="epic">EPIC: <strong>ARNAV00001</strong></p>
+      <div id="qr1" class="qr-wrap"></div>
+      <p class="status ok">✅ Cryptographically signed by ECI</p>
+      <details>
+        <summary>Raw payload (for debugging)</summary>
+        <pre>{"epicHash":"ARNAV00001","sig":"0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b"}</pre>
+      </details>
+      <script>
+        new QRCode(document.getElementById('qr1'), {
+          text: "{\"epicHash\":\"ARNAV00001\",\"sig\":\"0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b\"}",
+          width: 256,
+          height: 256,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      </script>
+    </div>
+  
+    <div class="card">
+      <h2>Anushka</h2>
+      <p class="epic">EPIC: <strong>ANUSHKA002</strong></p>
+      <div id="qr2" class="qr-wrap"></div>
+      <p class="status ok">✅ Cryptographically signed by ECI</p>
+      <details>
+        <summary>Raw payload (for debugging)</summary>
+        <pre>{"epicHash":"ANUSHKA002","sig":"0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b"}</pre>
+      </details>
+      <script>
+        new QRCode(document.getElementById('qr2'), {
+          text: "{\"epicHash\":\"ANUSHKA002\",\"sig\":\"0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b\"}",
+          width: 256,
+          height: 256,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      </script>
+    </div>
+  
+    <div class="card">
+      <h2>Shashwat</h2>
+      <p class="epic">EPIC: <strong>SHASHWAT03</strong></p>
+      <div id="qr3" class="qr-wrap"></div>
+      <p class="status ok">✅ Cryptographically signed by ECI</p>
+      <details>
+        <summary>Raw payload (for debugging)</summary>
+        <pre>{"epicHash":"SHASHWAT03","sig":"0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c"}</pre>
+      </details>
+      <script>
+        new QRCode(document.getElementById('qr3'), {
+          text: "{\"epicHash\":\"SHASHWAT03\",\"sig\":\"0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c\"}",
+          width: 256,
+          height: 256,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      </script>
+    </div>
+  
+  </div>
+
+  <div class="instructions">
+    <h3>📋 How to use</h3>
+    <ol>
+      <li>Start the kiosk: <code>cd master-kiosk &amp;&amp; npm run dev</code></li>
+      <li>Open the kiosk in your browser and reach the <strong>QR scan step</strong></li>
+      <li>Open this HTML file on a <strong>second screen or phone</strong></li>
+      <li>Hold a QR code up to the kiosk camera — it will scan automatically</li>
+      <li>After QR scan, continue to face-match (click <strong>Demo: Force Pass</strong>)</li>
+      <li>Enter PIN <code>1234</code> (or duress PIN <code>9999</code>) to complete voting</li>
+    </ol>
+  </div>
+</body>
+</html>
