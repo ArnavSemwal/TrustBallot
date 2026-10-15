@@ -21,9 +21,9 @@ export default function BenchmarkOverlay() {
   if (!lastTime && !lastSize) return null;
 
   return (
-    <div className="fixed bottom-6 left-6 z-[9999] bg-white border border-[#028090]/20 text-[#0D233A] text-[11px] font-mono px-4 py-2 rounded-full shadow-[0_4px_20px_rgba(2,128,144,0.15)] flex items-center gap-4 pointer-events-none transition-all duration-300">
+    <div className="fixed bottom-6 left-6 z-[9999] bg-white border border-slate-300/80 text-[#0D233A] text-[11px] font-mono px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-4 pointer-events-none transition-all duration-300">
       <div className="flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-[#F4A261] animate-pulse"></span>
+        <span className="w-2 h-2 rounded-full bg-[#028090]"></span>
         <span className="opacity-60 font-semibold tracking-wider">LATENCY:</span> 
         <span className="font-bold">{lastTime || '-- ms'}</span>
       </div>

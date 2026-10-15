@@ -48,6 +48,7 @@ export default function App() {
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/audit" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
