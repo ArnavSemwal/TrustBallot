@@ -159,6 +159,7 @@ export default function AuthPage() {
     setQrScanState('idle');
 
     const onScanSuccess = (decodedText: string) => {
+      console.log('✅ QR Code decoded successfully:', decodedText);
       if (!isMounted) return;
       try {
         const data = JSON.parse(decodedText);
@@ -169,6 +170,12 @@ export default function AuthPage() {
           if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().catch(console.error);
           }
+          // Seamless auto-advance to face/biometric verification
+          setTimeout(() => {
+            if (isMounted) {
+              setAuthStep('webcam');
+            }
+          }, 1000);
           return;
         }
       } catch (e) {
@@ -187,6 +194,13 @@ export default function AuthPage() {
         if (html5QrCode && html5QrCode.isScanning) {
           html5QrCode.stop().catch(console.error);
         }
+        if (cleanText.length === 10) {
+          setTimeout(() => {
+            if (isMounted) {
+              setAuthStep('webcam');
+            }
+          }, 1000);
+        }
       }
     };
 
@@ -197,14 +211,21 @@ export default function AuthPage() {
       try {
         html5QrCode = new Html5Qrcode('qr-reader');
 
-        // Check for available cameras if supported
-        let cameraConfig: any = { facingMode: 'environment' };
+        // Check for available cameras, filtering out IR (Windows Hello) sensors
+        let cameraConfig: any = { facingMode: 'user' };
         if (typeof Html5Qrcode.getCameras === 'function') {
           try {
             const devices = await Html5Qrcode.getCameras();
             if (devices && devices.length > 0) {
-              const backCam = devices.find((d) => /back|rear|environment/i.test(d.label));
-              cameraConfig = backCam ? backCam.id : devices[0].id;
+              // Exclude IR sensors that cannot read visual screens/paper
+              const rgbCameras = devices.filter((d) => !/ir\b|infrared|hello|depth|virtual/i.test(d.label));
+              const pool = rgbCameras.length > 0 ? rgbCameras : devices;
+              const preferred = pool.find((d) => /back|rear|environment/i.test(d.label)) ||
+                                pool.find((d) => /webcam|integrated|front|camera/i.test(d.label)) ||
+                                pool[0];
+              if (preferred && preferred.id) {
+                cameraConfig = preferred.id;
+              }
             }
           } catch {
             cameraConfig = { facingMode: 'user' };
@@ -213,11 +234,19 @@ export default function AuthPage() {
 
         if (!isMounted) return;
 
+        // Wide responsive qrbox with 20 FPS for instant scanning anywhere in viewfinder
         await html5QrCode.start(
           cameraConfig,
-          { fps: 10, qrbox: { width: 220, height: 220 } },
+          { 
+            fps: 20, 
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+              const edge = Math.min(viewfinderWidth, viewfinderHeight);
+              const boxSize = Math.max(Math.floor(edge * 0.85), 240);
+              return { width: boxSize, height: boxSize };
+            }
+          },
           onScanSuccess,
-          () => {} // suppress per-frame errors
+          () => {} // suppress per-frame scanning diagnostics
         );
 
         if (isMounted) {
@@ -235,7 +264,14 @@ export default function AuthPage() {
           }
           await html5QrCode.start(
             { facingMode: 'user' },
-            { fps: 10, qrbox: { width: 220, height: 220 } },
+            { 
+              fps: 20,
+              qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+                const edge = Math.min(viewfinderWidth, viewfinderHeight);
+                const boxSize = Math.max(Math.floor(edge * 0.85), 240);
+                return { width: boxSize, height: boxSize };
+              }
+            },
             onScanSuccess,
             () => {}
           );
@@ -734,6 +770,70 @@ export default function AuthPage() {
           <p className="text-sm font-medium text-[#0D233A] opacity-65 text-center">
             {currentLang.holdQr}
           </p>
+
+          {/* Quick Demo QR Test Selectors */}
+          <div className="flex flex-col items-center gap-1.5 mt-1 max-w-[340px]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#028090]/80">Quick Demo Voters</span>
+            <div className="flex flex-wrap justify-center gap-1.5">
+              {[
+                { label: 'Demo', epic: '1234567890', sig: '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b' },
+                { label: 'Arnav', epic: 'ARNAV00001', sig: '0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b' },
+                { label: 'Anushka', epic: 'ANUSHKA002', sig: '0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b' },
+                { label: 'Shashwat', epic: 'SHASHWAT03', sig: '0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c' },
+              ].map((v) => (
+                <button
+                  key={v.epic}
+                  type="button"
+                  onClick={() => {
+                    setEpicNumber(v.epic);
+                    setScannedSignature(v.sig);
+                    setQrScanState('scanned');
+                    setTimeout(() => setAuthStep('webcam'), 600);
+                  }}
+                  className="px-2.5 py-1 text-xs rounded-lg font-medium bg-[#028090]/10 text-[#028090] hover:bg-[#028090] hover:text-white transition-all shadow-sm"
+                >
+                  ⚡ {v.label}
+                </button>
+              ))}
+            </div>
+
+            <label className="text-[11px] text-[#0D233A]/60 hover:text-[#028090] cursor-pointer underline flex items-center gap-1 mt-1">
+              <span>📷 Or upload/scan QR image file</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const scanner = new Html5Qrcode('qr-reader');
+                  scanner.scanFile(file, true)
+                    .then((decodedText) => {
+                      try {
+                        const data = JSON.parse(decodedText);
+                        if (data.epicHash && data.sig) {
+                          setEpicNumber(data.epicHash);
+                          setScannedSignature(data.sig);
+                          setQrScanState('scanned');
+                          setTimeout(() => setAuthStep('webcam'), 800);
+                          return;
+                        }
+                      } catch {}
+                      const cleanText = decodedText.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
+                      if (cleanText) {
+                        setEpicNumber(cleanText);
+                        setScannedSignature(null);
+                        setQrScanState('scanned');
+                        if (cleanText.length === 10) setTimeout(() => setAuthStep('webcam'), 800);
+                      }
+                    })
+                    .catch((err) => {
+                      alert('Could not decode QR code from file: ' + err);
+                    });
+                }}
+              />
+            </label>
+          </div>
         </div>
 
         {/* RIGHT: Manual Entry */}
