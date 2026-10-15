@@ -55,13 +55,15 @@ def verify_dilithium(public_key_or_payload: Union[str, bytes], message_or_sig: U
     pub = public_key_or_payload
     msg = message_or_sig
     try:
-        from pqcrypto.sign.dilithium2 import verify
+        import importlib
+        pqcrypto_sign = importlib.import_module("pqcrypto.sign.dilithium2")
+        verify = getattr(pqcrypto_sign, "verify")
         pub_bytes = pub.encode('utf-8') if isinstance(pub, str) else bytes(pub)
         msg_bytes = msg.encode('utf-8') if isinstance(msg, str) else bytes(msg)
         sig_bytes = signature.encode('utf-8') if isinstance(signature, str) else bytes(signature)
         verify(pub_bytes, msg_bytes, sig_bytes)
         return True
-    except ImportError:
+    except (ImportError, ModuleNotFoundError, AttributeError):
         # Fallback format validation when library is unavailable
         sig_val = signature.encode('utf-8') if isinstance(signature, str) else bytes(signature)
         pub_val = pub.encode('utf-8') if isinstance(pub, str) else bytes(pub)
