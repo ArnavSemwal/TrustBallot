@@ -202,16 +202,36 @@ export default function BallotPage() {
               {currentLang.selectCandidate}
             </h1>
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en');
-            }}
-            className="rounded-full border-2 border-[#028090] px-5 py-1.5 text-sm font-semibold text-[#028090] hover:bg-[#028090] hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#F4A261] focus:ring-offset-2 relative z-10"
-          >
-            {currentLang.langToggle}
-          </button>
+          <div className="inline-flex items-center rounded-lg border border-[#0D233A]/20 bg-white/90 p-1 shadow-sm relative z-10">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedLanguage('en');
+              }}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                selectedLanguage === 'en'
+                  ? 'bg-[#028090] text-white shadow-sm'
+                  : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+              }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedLanguage('hi');
+              }}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                selectedLanguage === 'hi'
+                  ? 'bg-[#028090] text-white shadow-sm'
+                  : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+              }`}
+            >
+              हिंदी
+            </button>
+          </div>
         </div>
         <div className="absolute bottom-0 left-8 right-8 h-px bg-[#0D233A]/10" />
       </header>

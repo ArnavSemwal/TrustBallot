@@ -331,22 +331,26 @@ export default function AuthPage() {
 
   // ── Step 3: PIN ──
   const [pinNumber, setPinNumber] = useState('');
+  const [pinError, setPinError] = useState('');
   function pressPinKey(val: string) {
+    setPinError('');
     setPinNumber((prev) => (prev.length < 4 ? prev + val : prev));
   }
   function clearPin() {
+    setPinError('');
     setPinNumber('');
   }
   function deleteLastPin() {
+    setPinError('');
     setPinNumber((prev) => prev.slice(0, -1));
   }
 
   function handleSubmitPin() {
     if (pinNumber.length !== 4) return;
 
-    // TASK R3: Real PIN Check
+    // Real PIN Check
     if (pinNumber !== '1234' && pinNumber !== '9999') {
-      alert(selectedLanguage === 'hi' ? 'गलत पिन' : 'Invalid PIN');
+      setPinError(selectedLanguage === 'hi' ? 'गलत पिन दर्ज किया गया' : 'Invalid PIN entered. Please try again.');
       clearPin();
       return;
     }
@@ -358,26 +362,15 @@ export default function AuthPage() {
       setDuressMode(false);
     }
 
-    // TASK R3: Wire in verifyEpicSignature on a test payload
+    // Wire in verifyEpicSignature on a test payload
     const demoPayload = { epicHash: epicNumber, constituencyId: "C001" };
     // Use the scanned signature from JSON QR, otherwise fallback to known signatures for all 4 demo users
     const signature = scannedSignature || KNOWN_SIGNATURES[epicNumber] || '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
       
     const isValid = verifyEpicSignature(demoPayload as any, signature);
     if (!isValid) {
-      alert(selectedLanguage === 'hi' ? 'अवैध एपिक हस्ताक्षर (ECI)!' : 'Invalid EPIC Signature (ECI)!');
+      setPinError(selectedLanguage === 'hi' ? 'अवैध एपिक हस्ताक्षर (ECI)!' : 'Invalid EPIC Signature (ECI)!');
       return;
-    }
-
-    // Identity check for team members
-    const userMap: Record<string, string> = {
-      'ARNAV00001': 'Arnav',
-      'ANUSHKA002': 'Anushka',
-      'SHASHWAT03': 'Shashwat'
-    };
-    const userName = userMap[epicNumber] || '';
-    if (userName) {
-      alert(selectedLanguage === 'hi' ? `हस्ताक्षर सत्यापित। स्वागत है ${userName}!` : `ECI Signature Verified. Welcome ${userName}!`);
     }
 
     setVoterVerified(epicNumber);
@@ -426,13 +419,30 @@ export default function AuthPage() {
               </h1>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en')}
-              className="rounded-full border-2 border-[#028090] px-5 py-1.5 text-sm font-semibold text-[#028090] hover:bg-[#028090] hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#F4A261] focus:ring-offset-2 relative z-10"
-            >
-              {currentLang.langToggle}
-            </button>
+            <div className="inline-flex items-center rounded-lg border border-[#0D233A]/20 bg-white/90 p-1 shadow-sm relative z-10">
+              <button
+                type="button"
+                onClick={() => setSelectedLanguage('en')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  selectedLanguage === 'en'
+                    ? 'bg-[#028090] text-white shadow-sm'
+                    : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedLanguage('hi')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  selectedLanguage === 'hi'
+                    ? 'bg-[#028090] text-white shadow-sm'
+                    : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+                }`}
+              >
+                हिंदी
+              </button>
+            </div>
           </div>
           <div className="absolute bottom-0 left-8 right-8 h-px bg-[#0D233A]/10" />
         </header>
@@ -586,13 +596,30 @@ export default function AuthPage() {
                 {currentLang.enterPin}
               </h1>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en')}
-              className="rounded-full border-2 border-[#028090] px-5 py-1.5 text-sm font-semibold text-[#028090] hover:bg-[#028090] hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#F4A261] focus:ring-offset-2 relative z-10"
-            >
-              {currentLang.langToggle}
-            </button>
+            <div className="inline-flex items-center rounded-lg border border-[#0D233A]/20 bg-white/90 p-1 shadow-sm relative z-10">
+              <button
+                type="button"
+                onClick={() => setSelectedLanguage('en')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  selectedLanguage === 'en'
+                    ? 'bg-[#028090] text-white shadow-sm'
+                    : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedLanguage('hi')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  selectedLanguage === 'hi'
+                    ? 'bg-[#028090] text-white shadow-sm'
+                    : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+                }`}
+              >
+                हिंदी
+              </button>
+            </div>
           </div>
           <div className="absolute bottom-0 left-8 right-8 h-px bg-[#0D233A]/10" />
         </header>
@@ -601,7 +628,7 @@ export default function AuthPage() {
         <main className="h-[70vh] shrink-0 flex flex-col items-center justify-center gap-8 px-8">
           <div className="flex flex-col items-center max-w-sm w-full gap-8">
             {/* PIN Display */}
-            <div className="w-full relative">
+            <div className="w-full relative flex flex-col items-center">
               <input
                 type="text"
                 readOnly
@@ -609,6 +636,11 @@ export default function AuthPage() {
                 placeholder={currentLang.pinPlaceholder}
                 className="w-full text-center text-4xl font-mono tracking-[0.5em] font-bold text-[#0D233A] bg-white border-2 border-gray-200 rounded-2xl py-6 shadow-inner focus:outline-none placeholder:text-gray-300"
               />
+              {pinError && (
+                <p className="text-sm font-semibold text-red-600 text-center mt-2 animate-bounce">
+                  {pinError}
+                </p>
+              )}
             </div>
 
             {/* Keypad */}
@@ -690,13 +722,30 @@ export default function AuthPage() {
             </h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en')}
-            className="rounded-full border-2 border-[#028090] px-5 py-1.5 text-sm font-semibold text-[#028090] hover:bg-[#028090] hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#F4A261] focus:ring-offset-2 relative z-10"
-          >
-            {currentLang.langToggle}
-          </button>
+          <div className="inline-flex items-center rounded-lg border border-[#0D233A]/20 bg-white/90 p-1 shadow-sm relative z-10">
+            <button
+              type="button"
+              onClick={() => setSelectedLanguage('en')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                selectedLanguage === 'en'
+                  ? 'bg-[#028090] text-white shadow-sm'
+                  : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+              }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedLanguage('hi')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                selectedLanguage === 'hi'
+                  ? 'bg-[#028090] text-white shadow-sm'
+                  : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+              }`}
+            >
+              हिंदी
+            </button>
+          </div>
         </div>
 
         <div className="absolute bottom-0 left-8 right-8 h-px bg-[#0D233A]/10" />
@@ -759,70 +808,6 @@ export default function AuthPage() {
           <p className="text-sm font-medium text-[#0D233A] opacity-65 text-center">
             {currentLang.holdQr}
           </p>
-
-          {/* Quick Demo QR Test Selectors */}
-          <div className="flex flex-col items-center gap-1.5 mt-1 max-w-[340px]">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#028090]/80">Quick Demo Voters</span>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {[
-                { label: 'Demo', epic: '1234567890', sig: '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b' },
-                { label: 'Arnav', epic: 'ARNAV00001', sig: '0x5ce47b6eae0c0dd2afc24a92a7727c974e54ce13b0612b9236fbbb856ffec8db19e1f2c01cd7709e408a5eed77ec5484ffb649da99ac76a63070e60b8a297e331b' },
-                { label: 'Anushka', epic: 'ANUSHKA002', sig: '0x4cd76246b8e5c126f5fa2c241a095f2e594414b17fd72e3dad4a928db9a500ec07f239eb1d67852b56831f3aec8a6e5c4a5a448bc1322e8f41ba9b6612c365d91b' },
-                { label: 'Shashwat', epic: 'SHASHWAT03', sig: '0x954ebcee38c733bd9d9f27006b21ab5563795f501d720a929677a396e4281d1e22b4009d2df10e572cb62ed15c9475b97fe0af79c2a7d230444a464d17b41d5d1c' },
-              ].map((v) => (
-                <button
-                  key={v.epic}
-                  type="button"
-                  onClick={() => {
-                    setEpicNumber(v.epic);
-                    setScannedSignature(v.sig);
-                    setQrScanState('scanned');
-                    setTimeout(() => setAuthStep('webcam'), 600);
-                  }}
-                  className="px-2.5 py-1 text-xs rounded-lg font-medium bg-[#028090]/10 text-[#028090] hover:bg-[#028090] hover:text-white transition-all shadow-sm"
-                >
-                  ⚡ {v.label}
-                </button>
-              ))}
-            </div>
-
-            <label className="text-[11px] text-[#0D233A]/60 hover:text-[#028090] cursor-pointer underline flex items-center gap-1 mt-1">
-              <span>📷 Or upload/scan QR image file</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const scanner = new Html5Qrcode('qr-reader');
-                  scanner.scanFile(file, true)
-                    .then((decodedText) => {
-                      try {
-                        const data = JSON.parse(decodedText);
-                        if (data.epicHash && data.sig) {
-                          setEpicNumber(data.epicHash);
-                          setScannedSignature(data.sig);
-                          setQrScanState('scanned');
-                          setTimeout(() => setAuthStep('webcam'), 800);
-                          return;
-                        }
-                      } catch {}
-                      const cleanText = decodedText.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase();
-                      if (cleanText) {
-                        setEpicNumber(cleanText);
-                        setScannedSignature(null);
-                        setQrScanState('scanned');
-                        if (cleanText.length === 10) setTimeout(() => setAuthStep('webcam'), 800);
-                      }
-                    })
-                    .catch((err) => {
-                      alert('Could not decode QR code from file: ' + err);
-                    });
-                }}
-              />
-            </label>
-          </div>
         </div>
 
         {/* RIGHT: Manual Entry */}

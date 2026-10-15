@@ -95,12 +95,28 @@ export default function ReviewPage() {
           </span>
           <h1 className="text-xl font-bold text-[#0D233A]">{currentLang.reviewTitle}</h1>
         </div>
-        <div>
+        <div className="inline-flex items-center rounded-lg border border-[#0D233A]/20 bg-white/90 p-1 shadow-sm relative z-10">
           <button
-            onClick={() => setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en')}
-            className="px-5 py-2.5 rounded-full border-2 border-[#028090] text-[#028090] font-semibold text-sm hover:bg-[#028090]/5 transition-colors"
+            type="button"
+            onClick={() => setSelectedLanguage('en')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+              selectedLanguage === 'en'
+                ? 'bg-[#028090] text-white shadow-sm'
+                : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+            }`}
           >
-            {currentLang.langToggle}
+            English
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedLanguage('hi')}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+              selectedLanguage === 'hi'
+                ? 'bg-[#028090] text-white shadow-sm'
+                : 'text-[#0D233A]/70 hover:text-[#0D233A] hover:bg-black/5'
+            }`}
+          >
+            हिंदी
           </button>
         </div>
       </header>
