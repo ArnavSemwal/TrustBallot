@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKiosk } from '../context/KioskContext';
 import logo from '../imports/ymmetry.png';
@@ -16,8 +16,9 @@ const t = {
     confirmVote: 'Yes, Confirm & Cast Vote →',
     langToggle: 'English ⇌ हिंदी',
     txFailed: 'Transaction Failed',
-    txErrorBody: 'Network rejected the vote or a collision was detected. Please try again.',
+    txErrorBody: 'Network offline or error encountered. Returning to home...',
     retryVote: 'Retry Vote',
+
     cancelModal: 'Cancel',
   },
   hi: {
@@ -32,7 +33,7 @@ const t = {
     confirmVote: 'सील करें और वोट जमा करें',
     langToggle: 'हिंदी ⇌ English',
     txFailed: 'लेनदेन विफल',
-    txErrorBody: 'नेटवर्क ने वोट अस्वीकार कर दिया है। कृपया पुनः प्रयास करें।',
+    txErrorBody: 'नेटवर्क ऑफ़लाइन है या त्रुटि आई है। वापस जा रहे हैं...',
     retryVote: 'पुनः प्रयास करें',
     cancelModal: 'रद्द करें',
   },
@@ -47,10 +48,22 @@ export default function ReviewPage() {
     submitVote,
     secondsLeft,
     voterId,
+    resetSession,
   } = useKiosk();
   const currentLang = t[selectedLanguage];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteError, setVoteError] = useState(false);
+
+  // TASK R20: Smoothly go back to base page on error
+  useEffect(() => {
+    if (voteError) {
+      const timer = setTimeout(() => {
+        resetSession();
+        navigate('/');
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [voteError, navigate, resetSession]);
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
@@ -171,20 +184,6 @@ export default function ReviewPage() {
               <p className="text-sm font-medium text-[#0D233A]/60 mt-2 max-w-[280px] mx-auto">
                 {currentLang.txErrorBody}
               </p>
-            </div>
-            <div className="w-full grid grid-cols-2 gap-4 mt-2">
-              <button
-                onClick={() => navigate('/ballot')}
-                className="rounded-2xl border-2 border-[#0D233A]/20 text-[#0D233A] text-lg font-bold py-4 hover:bg-gray-50 active:scale-95 transition-all"
-              >
-                {currentLang.cancelModal}
-              </button>
-              <button
-                onClick={handleConfirm}
-                className="rounded-2xl bg-[#028090] text-white text-lg font-bold py-4 shadow-[0_6px_20px_rgba(2,128,144,0.35)] hover:bg-[#026d7a] active:scale-95 transition-all"
-              >
-                {currentLang.retryVote}
-              </button>
             </div>
           </div>
         </div>

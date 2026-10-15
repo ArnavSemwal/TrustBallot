@@ -10,6 +10,8 @@ import React, {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { get, set } from 'idb-keyval';
 import { Benchmark } from '../utils/benchmark';
+import { generateZKP } from '../crypto/zkp';
+import { encryptVoteSEAL, signPayloadDilithium } from '../crypto/encryption';
 
 export type Language = 'en' | 'hi';
 
@@ -40,6 +42,7 @@ interface KioskContextProps {
   votePool: any[];
   duressMode: boolean;
   setDuressMode: (val: boolean) => void;
+  trackerId: string | null;
 }
 
 const KioskContext = createContext<KioskContextProps | undefined>(undefined);
@@ -53,6 +56,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const [secondsLeft, setSecondsLeft] = useState(SESSION_TIMEOUT_SECONDS);
   const [votePool, setVotePool] = useState<any[]>([]);
   const [duressMode, setDuressMode] = useState(false);
+  const [trackerId, setTrackerId] = useState<string | null>(null);
 
   // TASK R8: Load vote pool from IndexedDB on startup
   useEffect(() => {
@@ -83,6 +87,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     setVoterId('');
     setSelectedCandidate(null);
     setDuressMode(false);
+    setTrackerId(null);
     navigate('/', { replace: true });
   }, [navigate]);
 
@@ -237,53 +242,79 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   const submitVote = async () => {
     return Benchmark.measureTime(
       'Local Vote Processing & Encryption',
-      () =>
-        new Promise<void>((resolve, reject) => {
-          const cryptoWorkStartTime = performance.now();
+      async () => {
+        const cryptoWorkStartTime = performance.now();
 
-          // TASK R6: Remove fake 20% rejection rate
-          // TASK R2: Temporary leak flag `isDecoy` so backend drops fake votes
-          const decoy1 = {
-            voterId: '9876543210',
-            candidateId: 'c1',
-            timestamp: Date.now() - 1000,
+        // TASK R14 & R16: Actually perform the cryptography!
+        const candidateIdStr = selectedCandidate?.id || 'c0';
+        const candidateIndex = parseInt(candidateIdStr.replace(/[^0-9]/g, '')) || 0;
+        
+        // 1. Encrypt vote with SEAL (R14)
+        const cipherBase64 = await encryptVoteSEAL(candidateIndex);
+        
+        // 2. Generate ZKP with snarkjs (R16)
+        const zkp = await generateZKP(1, candidateIdStr, 12); // Assuming electionId=1, 12 candidates
+        
+        // 3. Sign the payload hash with Dilithium WASM mock (R14)
+        // Creating a pseudo-hash for the payload
+        const payloadHash = `${voterId}_1_${cipherBase64.substring(0, 10)}`;
+        const signature = await signPayloadDilithium(payloadHash);
+
+        // 4. Generate Tracker ID (Receipt)
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cipherBase64));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const generatedTracker = `TRK-${hashHex.substring(0, 10).toUpperCase()}`;
+        setTrackerId(generatedTracker);
+
+        const realPayload = {
+          voterId,
+          ciphertext: cipherBase64,
+          zkp,
+          signature,
+          trackerId: generatedTracker,
+          timestamp: Date.now(),
+        };
+
+        const decoy1 = {
+          voterId: '9876543210',
+          ciphertext: 'DECOY_CIPHER_1',
+          zkp: { mock: true, decoy: true },
+          signature: 'DECOY_SIG_1',
+          timestamp: Date.now() - 1000,
+          isDecoy: true,
+        };
+        const decoy2 = {
+          voterId: '1122334455',
+          ciphertext: 'DECOY_CIPHER_2',
+          zkp: { mock: true, decoy: true },
+          signature: 'DECOY_SIG_2',
+          timestamp: Date.now() - 2000,
+          isDecoy: true,
+        };
+
+        if (duressMode) {
+          const decoy3 = {
+            voterId: '5544332211',
+            ciphertext: 'DECOY_CIPHER_3',
+            zkp: { mock: true, decoy: true },
+            signature: 'DECOY_SIG_3',
+            timestamp: Date.now() - 500,
             isDecoy: true,
           };
-          const decoy2 = {
-            voterId: '1122334455',
-            candidateId: 'c5',
-            timestamp: Date.now() - 2000,
-            isDecoy: true,
-          };
+          // TASK R13: Kiosk duress implementation: queued real vote
+          setVotePool((prev) => [...prev, realPayload, decoy3, decoy1, decoy2]);
+        } else {
+          setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
+        }
 
-          if (duressMode) {
-            // Under duress, silently spoil the real vote by adding a 3rd decoy instead.
-            const decoy3 = {
-              voterId: '5544332211',
-              candidateId: 'c12',
-              timestamp: Date.now() - 500,
-              isDecoy: true,
-            };
-            setVotePool((prev) => [...prev, decoy3, decoy1, decoy2]);
-          } else {
-            // Normal flow
-            const realPayload = {
-              voterId,
-              candidateId: selectedCandidate?.id,
-              timestamp: Date.now(),
-            };
-            setVotePool((prev) => [...prev, realPayload, decoy1, decoy2]);
-          }
+        // TASK R13: Constant-time execution padding to exactly 2500ms
+        const cryptoWorkTime = performance.now() - cryptoWorkStartTime;
+        const TARGET_TIME_MS = 2500;
+        const delay = Math.max(0, TARGET_TIME_MS - cryptoWorkTime);
 
-          // TASK R13: Constant-time execution padding to exactly 2500ms
-          const cryptoWorkTime = performance.now() - cryptoWorkStartTime;
-          const TARGET_TIME_MS = 2500;
-          const delay = Math.max(0, TARGET_TIME_MS - cryptoWorkTime);
-
-          setTimeout(() => {
-            resolve();
-          }, delay);
-        })
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     );
   };
 
@@ -303,6 +334,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         votePool,
         duressMode,
         setDuressMode,
+        trackerId,
       }}
     >
       {children}

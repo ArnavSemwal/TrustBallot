@@ -135,11 +135,14 @@ export default function AuthPage() {
 
   // ── Step 1: EPIC/QR entry state ──
   const [epicNumber, setEpicNumber] = useState('');
+  const [scannedSignature, setScannedSignature] = useState<string | null>(null);
+
   function pressKey(val: string) {
     setEpicNumber((prev) => (prev.length < 10 ? prev + val : prev));
   }
   function clearAll() {
     setEpicNumber('');
+    setScannedSignature(null);
   }
   function deleteLast() {
     setEpicNumber((prev) => prev.slice(0, -1));
@@ -162,12 +165,25 @@ export default function AuthPage() {
           { facingMode: 'user' }, // using user facing for kiosk/webcam
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
+            try {
+              const data = JSON.parse(decodedText);
+              if (data.epicHash && data.sig) {
+                setEpicNumber(data.epicHash);
+                setScannedSignature(data.sig);
+                html5QrCode?.stop().catch(console.error);
+                return;
+              }
+            } catch (e) {
+              // Not JSON, fallback to old behavior
+            }
+
             // Keep alphanumeric parts of the payload (EPIC format can be 10 chars, e.g. ABC1234567 or 10 digits)
             const cleanText = decodedText
               .replace(/[^a-zA-Z0-9]/g, '')
               .substring(0, 10)
               .toUpperCase();
             setEpicNumber(cleanText);
+            setScannedSignature(null);
             html5QrCode?.stop().catch(console.error);
           },
           () => {} // ignore scan errors
@@ -238,15 +254,29 @@ export default function AuthPage() {
 
     // TASK R3: Wire in verifyEpicSignature on a test payload
     const demoPayload = { epicHash: epicNumber, constituencyId: "C001" };
-    // We mock the signature fetching: 1234567890 has a valid signature. Any other EPIC gets an invalid mock signature.
-    const signature = epicNumber === '1234567890'
-      ? '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b'
-      : '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
+    // Use the scanned signature from JSON QR, otherwise fallback to the hardcoded mock for manual entry
+    let signature = scannedSignature;
+    if (!signature) {
+      signature = epicNumber === '1234567890'
+        ? '0x2bf29af677289b93f0c3c9d3569979023df1e44d61db62130fbf20c130842104184759cb52e0803178d61ff6da36de82788f30c648e7549693d1e56ddba10aad1b'
+        : '0xinvalid0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b';
+    }
       
     const isValid = verifyEpicSignature(demoPayload as any, signature);
     if (!isValid) {
       alert(selectedLanguage === 'hi' ? 'अवैध एपिक हस्ताक्षर (ECI)!' : 'Invalid EPIC Signature (ECI)!');
       return;
+    }
+
+    // Identity check for team members
+    const userMap: Record<string, string> = {
+      'ARNAV00001': 'Arnav',
+      'ANUSHKA002': 'Anushka',
+      'SHASHWAT03': 'Shashwat'
+    };
+    const userName = userMap[epicNumber] || '';
+    if (userName) {
+      alert(selectedLanguage === 'hi' ? `हस्ताक्षर सत्यापित। स्वागत है ${userName}!` : `ECI Signature Verified. Welcome ${userName}!`);
     }
 
     setVoterVerified(epicNumber);

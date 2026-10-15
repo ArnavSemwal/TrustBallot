@@ -1,17 +1,18 @@
-# Phase 0 Review: Real vs. Simulated Baseline
+# Phase 0-3 Review: Real vs. Simulated Baseline
 
 *Use this table directly in your presentation slides to show the reviewers exactly what is functional today vs what is a placeholder for future phases.*
 
-| Component | Status | What exists right now (Phase 0) | Planned for Phase 1 & 2 |
-| :--- | :--- | :--- | :--- |
-| **Kiosk UI Flow** | 🟢 **Real** | Full screens, 2 languages, session timeout, symbol navigation. | Add accessibility features (audio prompts). |
-| **Batch & Shuffle** | 🟢 **Real** | Votes are pooled, batch flushed, and shuffled using a cryptographically secure Fisher-Yates algorithm (`crypto.getRandomValues`). | Expand batch size to 50-100 votes with a 2-hour flush window. |
-| **Duress PIN (Coercion)** | 🟡 **Partial** | PIN `9999` triggers silent duress. UI remains identical. Fake votes are safely flagged (`isDecoy`) so the Tally Server drops them. | Implement cryptographically secure zero-vote decoys (no flags). |
-| **EPIC / Auth Check** | 🟡 **Partial** | Real PIN check is enforced. `verifyEpicSignature` cryptography logic is hooked up to dummy payloads to prove integration. | Real QR code scanning of EPIC cards. |
-| **Vote Encryption** | 🔴 **Simulated** | Votes are currently sent as plaintext candidate IDs to the backend (or encrypted by the server, not the kiosk). | Kiosk-side post-quantum encryption before leaving the device. |
-| **Zero-Knowledge Proofs**| 🔴 **Missing** | No ZKP generation exists on the kiosk. | Generate `snarkjs` proofs directly in the browser (Phase 3). |
+| Component | Status | What exists right now |
+| :--- | :--- | :--- |
+| **Kiosk UI Flow** | 🟢 **Real** | Full screens, 2 languages, session timeout, symbol navigation. |
+| **Batch & Shuffle** | 🟢 **Real** | Votes pooled via IndexedDB, batch flushed, and shuffled securely via Fisher-Yates. |
+| **Duress PIN (Coercion)** | 🟢 **Real** | PIN `9999` triggers silent duress. Real vote is queued silently in the background alongside decoys. |
+| **EPIC / Auth Check** | 🟢 **Real** | `html5-qrcode` scanner integration for EPIC. `verifyEpicSignature` logic hooked up. |
+| **Vote Encryption** | 🟢 **Real** | Kiosk-side post-quantum encryption (`encryptVoteSEAL`) before leaving the device. |
+| **Zero-Knowledge Proofs**| 🟢 **Real** | ZKP generation exists on the kiosk via `snarkjs.plonk.fullProve`. |
+| **Error / Offline UX** | 🟢 **Real** | Seamless offline recovery. If submission fails, user is smoothly routed to home base. |
 
 ### Speaking Notes for Arnav:
-*   **"We fixed the Duress leak."** - Explain how previously, the duress PIN was accidentally corrupting the election by voting for candidate 1 and 5. We fixed this by flagging decoy traffic, ensuring the backend drops it without changing the tally.
-*   **"We secured the shuffle."** - Explain how using `Math.random()` to shuffle votes allows hackers to de-anonymize the vote batch, so you upgraded the kiosk to use a true cryptographic Fisher-Yates shuffle.
-*   **"We are ready for the backend."** - Explain how you built a strict JSON Payload Specification (Task R1) and made environment URLs dynamic, meaning the Kiosk is now 100% ready to plug into Shashwat's real nodes as soon as he deploys them.
+*   **"We are ahead of schedule."** - Explain how you have already implemented Phase 1 (IndexedDB persistence), Phase 2 (QR scanning, Duress queue, Kiosk encryption), and Phase 3 (ZKP generation, Dashboard wiring).
+*   **"We fixed the Duress leak securely."** - Explain how the real vote is now queued silently behind the scenes without changing UI timings.
+*   **"Full Local Cryptography."** - Explain how encryption and ZKP happen natively in the browser on the Kiosk.

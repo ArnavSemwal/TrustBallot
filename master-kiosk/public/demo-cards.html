@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TrustBallot Demo Voter Cards</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; padding: 50px; background: #f0f4f8; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    .card h2 { margin-bottom: 5px; color: #028090; font-size: 24px; }
+    .card p { color: #666; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
+    canvas { border: 4px solid #0D233A; border-radius: 8px; width: 250px !important; height: 250px !important; }
+    .instructions { width: 100%; text-align: center; margin-bottom: 40px; color: #0D233A; }
+  </style>
+</head>
+<body>
+
+<div class="instructions">
+  <h1>TrustBallot Team QR Cards</h1>
+  <p>Scan these directly from your phone screen into the Kiosk webcam!</p>
+  <p>They contain cryptographically signed JSON payloads from the ECI private key.</p>
+</div>
+
+<div class="card">
+  <h2>Arnav</h2>
+  <p>EPIC: ARNAV00001</p>
+  <canvas id="qr1"></canvas>
+</div>
+
+<div class="card">
+  <h2>Anushka</h2>
+  <p>EPIC: ANUSHKA002</p>
+  <canvas id="qr2"></canvas>
+</div>
+
+<div class="card">
+  <h2>Shashwat</h2>
+  <p>EPIC: SHASHWAT03</p>
+  <canvas id="qr3"></canvas>
+</div>
+
+<script>
+  const arnavPayload = JSON.stringify({
+    epicHash: "ARNAV00001",
+    sig: "0x8b51352cdaf07fb8e56ef9015c49b5e45f67600c242440d775df9be074ad738517e6f1dc5791ce8a8e72e3d99d797824715b954a83ee9f0998a9f779f537c99c1c"
+  });
+  
+  const anushkaPayload = JSON.stringify({
+    epicHash: "ANUSHKA002",
+    sig: "0xd0c8f2c807c82c7e05297191479aaa1f2e8d1183d7477154b12a271052f2b78a4c41e12a7506767e1d80c64ed267694d546a244570469babb9fbf96b6363e6821b"
+  });
+  
+  const shashwatPayload = JSON.stringify({
+    epicHash: "SHASHWAT03",
+    sig: "0x22b7db03e87803071b43b4248c6405667bc62602d100fbc5ae268c879518aa57461e71afab4cb576390ef8dfb84b761c947e1748a7c98b9b115250beaacea5361b"
+  });
+
+  QRCode.toCanvas(document.getElementById('qr1'), arnavPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+  QRCode.toCanvas(document.getElementById('qr2'), anushkaPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+  QRCode.toCanvas(document.getElementById('qr3'), shashwatPayload, { width: 250, margin: 2, color: { dark: '#0D233A' } });
+</script>
+</body>
+</html>
