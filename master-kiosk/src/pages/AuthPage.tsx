@@ -78,13 +78,13 @@ type QrScanState = 'idle' | 'active' | 'scanned' | 'error';
 
 const t = {
   en: {
-    step1: 'Step 1 of 3: Voter Verification',
+    step1: 'Step 1 of 3 • Voter Verification',
     scanQr: 'Scan Your Voter ID / EPIC QR Code',
     awaitingQr: 'Awaiting QR Code',
     holdQr: 'Hold your QR code inside the frame',
     enterEpic: 'Enter EPIC Number Manually',
     verifyProceed: 'Verify & Proceed',
-    step2: 'Step 2 of 3: Biometric Verification',
+    step2: 'Step 1 of 3 • Biometric Verification',
     verifying: 'Verifying Biometrics…',
     verified: 'Identity Verified',
     verifyFailed: 'Verification Failed',
@@ -93,7 +93,7 @@ const t = {
     proceeding: 'Proceeding to secure ballot…',
     demoForcePass: 'Demo: Force Pass',
     demoForceFail: 'Demo: Force Fail',
-    step3: 'Step 3 of 3: Secure Voting PIN',
+    step3: 'Step 1 of 3 • Secure Voting PIN',
     enterPin: 'Enter your 4-digit voting PIN',
     pinPlaceholder: 'XXXX',
     submitPin: 'Confirm Identity',
@@ -102,13 +102,13 @@ const t = {
     langToggle: 'English ⇄ हिंदी',
   },
   hi: {
-    step1: 'चरण 1 (3 में से): मतदाता सत्यापन',
+    step1: 'चरण 1 (3 में से) • मतदाता सत्यापन',
     scanQr: 'अपना वोटर आईडी / एपिक क्यूआर कोड स्कैन करें',
     awaitingQr: 'क्यूआर कोड की प्रतीक्षा है',
     holdQr: 'अपना क्यूआर कोड फ्रेम के अंदर रखें',
     enterEpic: 'एपिक नंबर मैन्युअल रूप से दर्ज करें',
     verifyProceed: 'सत्यापित करें और आगे बढ़ें',
-    step2: 'चरण 2 (3 में से): बायोमेट्रिक सत्यापन',
+    step2: 'चरण 1 (3 में से) • बायोमेट्रिक सत्यापन',
     verifying: 'बायोमेट्रिक्स सत्यापित हो रहा है…',
     verified: 'पहचान सत्यापित',
     verifyFailed: 'सत्यापन विफल रहा',
@@ -117,7 +117,7 @@ const t = {
     proceeding: 'सुरक्षित बैलेट की ओर बढ़ रहे हैं…',
     demoForcePass: 'डेमो: फोर्स पास (सफल)',
     demoForceFail: 'डेमो: फोर्स फेल (असफल)',
-    step3: 'चरण 3 (3 में से): सुरक्षित वोटिंग पिन',
+    step3: 'चरण 1 (3 में से) • सुरक्षित वोटिंग पिन',
     enterPin: 'अपना 4 अंकों का वोटिंग पिन दर्ज करें',
     pinPlaceholder: 'XXXX',
     submitPin: 'पहचान की पुष्टि करें',
@@ -410,13 +410,10 @@ export default function AuthPage() {
               className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10"
             />
 
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-                <span
-                  className={`w-2 h-2 rounded-full ${scanPhase === 'fail' ? 'bg-red-500' : 'bg-[#028090] animate-pulse'}`}
-                ></span>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-0 w-full pointer-events-none text-center">
+              <span className="text-xs font-bold tracking-widest text-[#028090] uppercase">
                 {currentLang.step2}
-              </div>
+              </span>
               <h1
                 className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
                 style={{ lineHeight: '32px' }}
@@ -578,11 +575,10 @@ export default function AuthPage() {
               alt="TrustBallot"
               className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10"
             />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-                <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-0 w-full pointer-events-none text-center">
+              <span className="text-xs font-bold tracking-widest text-[#028090] uppercase">
                 {currentLang.step3}
-              </div>
+              </span>
               <h1
                 className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
                 style={{ lineHeight: '32px' }}
@@ -682,11 +678,10 @@ export default function AuthPage() {
             className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10"
           />
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-              <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-0 w-full pointer-events-none text-center">
+            <span className="text-xs font-bold tracking-widest text-[#028090] uppercase">
               {currentLang.step1}
-            </div>
+            </span>
             <h1
               className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
               style={{ lineHeight: '32px' }}

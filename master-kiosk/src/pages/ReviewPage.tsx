@@ -5,7 +5,7 @@ import logo from '../imports/ymmetry.png';
 
 const t = {
   en: {
-    step3: 'Step 3 of 3: Digital VVPAT Review',
+    step3: 'Step 3 of 3 • Digital VVPAT Review',
     reviewTitle: 'Review Your Digital Slip',
     voterId: 'Voter EPIC ID',
     slipStatus: 'Slip Status',
@@ -22,7 +22,7 @@ const t = {
     cancelModal: 'Cancel',
   },
   hi: {
-    step3: 'चरण 3: डिजिटल वीवीपीएटी (VVPAT) समीक्षा',
+    step3: 'चरण 3 (3 में से) • डिजिटल वीवीपीएटी (VVPAT) समीक्षा',
     reviewTitle: 'अपनी डिजिटल पर्ची की समीक्षा करें',
     voterId: 'मतदाता एपिक आईडी',
     slipStatus: 'पर्ची की स्थिति',
@@ -89,12 +89,11 @@ export default function ReviewPage() {
         <div className="flex items-center">
           <img src={logo} alt="TrustBallot Logo" className="h-16 w-auto object-contain" />
         </div>
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center flex flex-col items-center gap-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-            <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center flex flex-col items-center gap-1 pointer-events-none">
+          <span className="text-xs font-bold tracking-widest text-[#028090] uppercase">
             {currentLang.step3}
-          </div>
-          <h1 className="text-xl font-bold text-[#0D233A] mt-1">{currentLang.reviewTitle}</h1>
+          </span>
+          <h1 className="text-xl font-bold text-[#0D233A]">{currentLang.reviewTitle}</h1>
         </div>
         <div>
           <button

@@ -118,7 +118,7 @@ function PartySymbol({ color, image }: { color: string; image?: string }) {
 
 const t = {
   en: {
-    step2: 'Step 2 of 3: Cast Your Vote',
+    step2: 'Step 2 of 3 • Cast Your Vote',
     selectCandidate: 'Select Your Candidate',
     vote: 'VOTE',
     confirmTitle: 'CONFIRM YOUR VOTE',
@@ -131,7 +131,7 @@ const t = {
     prev: 'Previous Page',
   },
   hi: {
-    step2: 'चरण 2: अपना वोट डालें',
+    step2: 'चरण 2 (3 में से) • अपना वोट डालें',
     selectCandidate: 'अपना उम्मीदवार चुनें',
     vote: 'वोट दें',
     confirmTitle: 'अपने वोट की पुष्टि करें',
@@ -191,11 +191,10 @@ export default function BallotPage() {
             alt="TrustBallot"
             className="h-[130px] w-[183px] object-contain mix-blend-multiply relative z-10"
           />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-0 w-full pointer-events-none">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#028090]/10 text-[#028090] text-xs font-semibold tracking-wider uppercase">
-              <span className="w-2 h-2 rounded-full bg-[#028090] animate-pulse"></span>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-0 w-full pointer-events-none text-center">
+            <span className="text-xs font-bold tracking-widest text-[#028090] uppercase">
               {currentLang.step2}
-            </div>
+            </span>
             <h1
               className="text-2xl font-bold text-[#0D233A] text-center tracking-tight"
               style={{ lineHeight: '32px' }}
