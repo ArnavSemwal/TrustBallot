@@ -17,6 +17,8 @@ contract TrustBallot {
     
     // Mapping to track spent nullifiers per election
     mapping(uint256 => mapping(uint256 => bool)) public spentNullifiers;
+    // Mapping to track emergency revoked/stolen credential nullifiers (C16)
+    mapping(uint256 => mapping(uint256 => bool)) public revokedNullifiers;
     // Mapping to store ciphertext hashes
     mapping(uint256 => mapping(uint256 => bytes32)) public voteHashes;
     // Mapping to store Merkle roots per election
@@ -28,6 +30,7 @@ contract TrustBallot {
     event ElectionRootSet(uint256 indexed electionId, uint256 root);
     event VoteAccepted(uint256 indexed electionId, uint256 nullifier, bytes32 ciphertextHash);
     event VoteRejected(uint256 indexed electionId, string reason);
+    event CredentialRevoked(uint256 indexed electionId, uint256 indexed nullifier, string reason);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin");
@@ -48,6 +51,19 @@ contract TrustBallot {
     function setElectionRoot(uint256 electionId, uint256 root) external onlyAdmin {
         electionRoots[electionId] = root;
         emit ElectionRootSet(electionId, root);
+    }
+
+    /**
+     * @dev Emergency revocation of stolen/compromised credentials (C16)
+     */
+    function revokeCredential(
+        uint256 electionId,
+        uint256 nullifier,
+        string calldata reason
+    ) external onlyAdmin {
+        spentNullifiers[electionId][nullifier] = true;
+        revokedNullifiers[electionId][nullifier] = true;
+        emit CredentialRevoked(electionId, nullifier, reason);
     }
 
     /**
@@ -77,7 +93,11 @@ contract TrustBallot {
             return;
         }
 
-        // 2. Nullifier Check (Cheap check before ZKP)
+        // 2. Revocation & Nullifier Check (Cheap check before ZKP)
+        if (revokedNullifiers[electionId][nullifier]) {
+            emit VoteRejected(electionId, "credential_revoked");
+            return;
+        }
         if (spentNullifiers[electionId][nullifier]) {
             emit VoteRejected(electionId, "duplicate_nullifier");
             return;
