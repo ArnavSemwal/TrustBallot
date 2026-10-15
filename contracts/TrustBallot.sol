@@ -67,15 +67,15 @@ contract TrustBallot {
     }
 
     /**
-     * @dev Submit a vote payload.
+     * @dev Submit a vote payload with gas-optimized calldata parameter handling (C21).
      */
     function submitVote(
-        string memory kioskId,
+        string calldata kioskId,
         uint256 electionId,
         uint256 nullifier,
-        bytes memory ciphertextVote,
+        bytes calldata ciphertextVote,
         uint256[24] calldata zkpProof,
-        bytes memory dilithiumSignature
+        bytes calldata dilithiumSignature
     ) external {
         // 0. Check Election State
         if (electionStates[electionId] != ElectionState.Open) {
