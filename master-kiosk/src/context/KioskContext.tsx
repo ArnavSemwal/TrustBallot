@@ -162,31 +162,13 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
   }, [votePool]);
 
   const flushPool = useCallback(async () => {
-    // TASK R15: Fixed-size encrypted payloads and dummy-traffic scheduling
-    // Always take exactly 3 items from the queue. If there are fewer, pad with dummy decoys.
-    let poolToFlush = votePoolRef.current.slice(0, 3);
-
-    if (poolToFlush.length < 3) {
-      console.log('🚀 [MIDDLEWARE] PADDING BATCH WITH DUMMY TRAFFIC TO MAINTAIN FIXED SIZE');
-      while (poolToFlush.length < 3) {
-        poolToFlush.push({
-          voterId: '0000000000',
-          candidateId: 'c0',
-          timestamp: Date.now(),
-          isDecoy: true,
-        });
-      }
+    // Only flush when there are actual votes in the pool
+    if (votePoolRef.current.length === 0) {
+      return;
     }
 
-    // TASK R4: Cryptographically secure Fisher-Yates shuffle
-    for (let i = poolToFlush.length - 1; i > 0; i--) {
-      const randomBuffer = new Uint32Array(1);
-      crypto.getRandomValues(randomBuffer);
-      const j = randomBuffer[0] % (i + 1);
-      [poolToFlush[i], poolToFlush[j]] = [poolToFlush[j], poolToFlush[i]];
-    }
-
-    console.log('🚀 [MIDDLEWARE] FLUSHING BATCH TO BLOCKCHAIN:', poolToFlush);
+    let poolToFlush = [...votePoolRef.current];
+    console.log('🚀 [MIDDLEWARE] FLUSHING VOTES TO CONSORTIUM:', poolToFlush);
     const successfullySent = new Set();
 
     for (const payload of poolToFlush) {
@@ -196,6 +178,7 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const ciphertext = payload.ciphertext || `ENC_VOTE_${voteInt}`;
       const zkpProof = typeof payload.zkp === 'string' ? payload.zkp : JSON.stringify(payload.zkp || { mock: true });
       const signature = payload.signature || 'DILITHIUM2_SIG_VALID';
+      const isDecoy = Boolean((payload as any).isDecoy);
 
       const payloadObj = {
         election_id: 'e_12345',
@@ -210,12 +193,12 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         signature,
         kioskSignature: signature,
         vote: voteInt,
-        isDecoy: (payload as any).isDecoy || false,
+        isDecoy,
       };
       Benchmark.calculatePayloadSize(payloadObj);
 
       // 1. Generate verified transaction hash
-      const txData = `${payload.voterId || 'decoy'}-${voteInt}-${payload.timestamp || Date.now()}`;
+      const txData = `${payload.voterId || 'voter'}-${voteInt}-${payload.timestamp || Date.now()}`;
       let txHash = '0x' + Math.random().toString(16).substring(2, 42);
       try {
         const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txData));
@@ -226,15 +209,17 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
       const timestamp = new Date().toISOString();
       const logString = `[${timestamp}] TX_HASH: ${txHash} STATUS: CRYPTOGRAPHICALLY_SEALED`;
 
-      // 2. Commit to Consortium Ledger (syncs in real-time with Audit console)
-      await recordSealedTransaction({
-        txHash,
-        nullifier,
-        timestamp,
-        candidateId: candidateStr,
-        isDecoy: Boolean(payload.isDecoy),
-        logString,
-      });
+      // 2. Commit to Consortium Ledger (ONLY real votes, decoys are dropped)
+      if (!isDecoy) {
+        await recordSealedTransaction({
+          txHash,
+          nullifier,
+          timestamp,
+          candidateId: candidateStr,
+          isDecoy: false,
+          logString,
+        });
+      }
 
       // 3. Forward to backend if reachable
       try {
@@ -272,13 +257,11 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [votePool]);
 
-  // TASK R15: Constant timing dummy-traffic scheduling
-  // We ALWAYS flush every 5 seconds, regardless of whether there are votes or not,
-  // to ensure network traffic frequency never leaks voter activity.
+  // Flush pending votes every 2 seconds if any are queued
   useEffect(() => {
     const intervalId = setInterval(() => {
       flushPool();
-    }, 5000); // Exactly 5 seconds constant frequency
+    }, 2000);
 
     return () => clearInterval(intervalId);
   }, [flushPool]);

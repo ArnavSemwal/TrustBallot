@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { get } from 'idb-keyval';
-import { getSealedTransactions, subscribeToMesh } from '../utils/ledger';
+import { getSealedTransactions, subscribeToMesh, clearLedger } from '../utils/ledger';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -216,7 +216,22 @@ export default function AdminDashboard() {
               ONLINE (WSS / CONSORTIUM MESH)
             </span>
           </h2>
-          <span className="text-[#666] text-[10px] font-mono">Consortium P2P Mesh (Active)</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[#666] text-[10px] font-mono">Consortium P2P Mesh (Active)</span>
+            <button
+              type="button"
+              onClick={async () => {
+                await clearLedger();
+                const startupLog = `[${new Date().toISOString()}] SYSTEM_STARTUP: Telemetry stream initialized.`;
+                const syncLog = `[${new Date().toISOString()}] NODE_SYNC: Consortium connection established (4 of 4 nodes active).`;
+                const genesisLog = `[${new Date().toISOString()}] CONSORTIUM_LEDGER: Genesis Block #000000 active. Zero-Knowledge proofs online.`;
+                setStream([startupLog, syncLog, genesisLog]);
+              }}
+              className="border border-[#333] hover:border-[#666] text-[#888] hover:text-[#ededed] px-2 py-0.5 text-[10px] uppercase font-mono rounded-sm transition-colors"
+            >
+              Reset Stream
+            </button>
+          </div>
         </div>
         <div
           ref={terminalRef}
