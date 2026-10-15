@@ -287,10 +287,19 @@ export const KioskProvider = ({ children }: { children: ReactNode }) => {
         const payloadHash = `${voterId}_1_${cipherBase64.substring(0, 10)}`;
         const signature = await signPayloadDilithium(payloadHash);
 
-        // 4. Generate Tracker ID (Receipt)
-        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cipherBase64));
+        // 4. Generate unique Tracker ID (Receipt)
+        const saltBytes = new Uint8Array(16);
+        crypto.getRandomValues(saltBytes);
+        const saltHex = Array.from(saltBytes)
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        const trackerSource = `${voterId || 'voter'}_${candidateIdStr}_${Date.now()}_${saltHex}_${cipherBase64}`;
+        const hashBuffer = await crypto.subtle.digest(
+          'SHA-256',
+          new TextEncoder().encode(trackerSource)
+        );
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
         const generatedTracker = `TRK-${hashHex.substring(0, 10).toUpperCase()}`;
         setTrackerId(generatedTracker);
 

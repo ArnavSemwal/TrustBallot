@@ -42,18 +42,18 @@ export default function AdminDashboard() {
   const [isOffline, setIsOffline] = useState(false);
   const [queuedVotes, setQueuedVotes] = useState(0);
   
-  // R17: Node status state
+  // R17: Node status state - 3-of-4 quorum active (Node_03 simulated offline/fault injection)
   const [nodes, setNodes] = useState<any[]>([
     { id: 'Node_01', role: 'ECI Primary', status: 'Online / Synced', health: 'good' },
     { id: 'Node_02', role: 'Supreme Court', status: 'Online / Synced', health: 'good' },
-    { id: 'Node_03', role: 'State EC Node', status: 'Online / Synced', health: 'good' },
+    { id: 'Node_03', role: 'State EC Node', status: 'Offline / Partitioned', health: 'warn' },
     { id: 'Node_04', role: 'Independent Auditor', status: 'Online / Synced', health: 'good' }
   ]);
 
   // Fetch real incoming ciphertext stream and listen to live consortium mesh
   useEffect(() => {
     const startupLog = `[${new Date().toISOString()}] SYSTEM_STARTUP: Telemetry stream initialized.`;
-    const syncLog = `[${new Date().toISOString()}] NODE_SYNC: Consortium connection established (4 of 4 nodes active).`;
+    const syncLog = `[${new Date().toISOString()}] NODE_SYNC: BFT Consortium active (3 of 4 quorum online, Node_03 offline).`;
     const genesisLog = `[${new Date().toISOString()}] CONSORTIUM_LEDGER: Genesis Block #000000 active. Zero-Knowledge proofs online.`;
 
     // Load persisted disputes
@@ -283,19 +283,43 @@ export default function AdminDashboard() {
           {(nodes.length > 0 ? nodes : [
             { id: 'Node_01', role: 'ECI Primary', status: 'Online / Synced', health: 'good' },
             { id: 'Node_02', role: 'Supreme Court', status: 'Online / Synced', health: 'good' },
-            { id: 'Node_03', role: 'State EC Node', status: 'Online / Synced', health: 'good' },
+            { id: 'Node_03', role: 'State EC Node', status: 'Offline / Partitioned', health: 'warn' },
             { id: 'Node_04', role: 'Independent Auditor', status: 'Online / Synced', health: 'good' }
           ]).map((node, i) => (
-            <div key={i} className="bg-[#111111] border border-[#222] rounded-sm p-4 flex flex-col justify-between">
+            <div
+              key={i}
+              className={`bg-[#111111] border ${
+                node.health === 'good' ? 'border-[#222]' : 'border-amber-700/50 bg-amber-950/10'
+              } rounded-sm p-4 flex flex-col justify-between`}
+            >
               <div>
-                <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
-                  {node.id}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#888] text-[10px] uppercase font-mono tracking-widest">
+                    {node.id}
+                  </span>
+                  {node.health !== 'good' && (
+                    <span className="text-amber-400 border border-amber-800/60 bg-amber-950/50 px-1 py-0.2 rounded text-[8px] font-mono">
+                      FAULT SIMULATION
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-[#ededed] text-sm mt-1 font-mono">{node.role}</h3>
               </div>
               <div className="flex items-center gap-2 mt-6">
-                <span className={`w-1.5 h-1.5 ${node.health === 'good' ? 'bg-[#2e7d32]' : 'bg-[#F4A261]'}`} />
-                <span className="text-[#888] text-[10px] uppercase font-mono">{node.status}</span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    node.health === 'good'
+                      ? 'bg-[#2e7d32] shadow-[0_0_6px_#2e7d32]'
+                      : 'bg-amber-400 shadow-[0_0_6px_#f59e0b]'
+                  }`}
+                />
+                <span
+                  className={`text-[10px] uppercase font-mono ${
+                    node.health === 'good' ? 'text-[#888]' : 'text-amber-400 font-semibold'
+                  }`}
+                >
+                  {node.status}
+                </span>
               </div>
             </div>
           ))}
